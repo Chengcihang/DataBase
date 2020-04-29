@@ -15,16 +15,16 @@ int main() {
     int recordSize = 10;  // 记录十个字节
 
     if((rc = rmManager.CreateFile("FirstTable",recordSize)))
-        printf("文件创建失败%d\n",rc);
+        printf("\n文件创建失败%d\n",rc);
     else{
-        printf("文件FirstTable创建成功...");
+        printf("\n文件FirstTable创建成功...\n");
     }
 
     // 打开数据表
     if((rc = rmManager.OpenFile("FirstTable",table)))
-        printf("打开数据表失败...%d\n",rc);
+        printf("\n打开数据表失败...%d\n",rc);
     else{
-        printf("打开数据表成功...");
+        printf("\n打开数据表成功...\n");
     }
 
     // 输出缓冲区
@@ -32,10 +32,21 @@ int main() {
 
     // 关闭数据表
     if((rc = rmManager.CloseFile(table)))
-        printf("关闭数据表失败%d\n",rc);
+        printf("\n关闭数据表失败%d\n",rc);
     else{
-        printf("关闭数据表成功...");
+        printf("\n关闭数据表成功...\n");
     }
+
+    // 输出缓冲区
+    pfManager->PrintBuffer();
+
+    // 删除数据表
+    if((rc = rmManager.DestroyFile("FirstTable")))
+        printf("删除数据表失败...%d\n",rc);
+    else{
+        printf("\n删除数据表成功...\n");
+    }
+
 
     return 0;
 }

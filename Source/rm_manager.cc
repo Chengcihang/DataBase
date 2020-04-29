@@ -153,7 +153,7 @@ RC RM_Manager::OpenFile   (const char *fileName, RM_FileHandle &fileHandle){
     if((rc = pfm.OpenFile(fileName, file)))
         return rc;
 
-    // 在缓冲区中申请一块地址来保存file;
+    // 在缓冲区中申请一块空间来保存file,这个空间是一个页，创建时会被pin
     char *pf;
     pfm.AllocateBlock(pf);        //pf为内存中的地址
 
@@ -235,13 +235,14 @@ RC RM_Manager::CloseFile  (RM_FileHandle &fileHandle) {
     }
     // 如果没有被修改就啥都不用做
 
+    // 由于OpenFile时在缓冲区中申请了空间，需要释放掉
+    if(fileHandle.pfh != NULL)
+        pfm.DisposeBlock((char *)fileHandle.pfh);
+
     // 关闭文件
     if((rc = pfm.CloseFile(*fileHandle.pfh)))
         return rc;
 
-    // 由于OpenFile时在缓冲区中申请了空间，需要释放掉
-    if(fileHandle.pfh != NULL)
-        pfm.DisposeBlock((char *)fileHandle.pfh);
     // 数据表清除
     if((rc = CleanUpFH(fileHandle)))
         return (rc);

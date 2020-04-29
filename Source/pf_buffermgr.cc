@@ -311,7 +311,7 @@ RC PF_BufferMgr::MarkDirty(int fd, PageNum pageNum)
 }
 
 /**
- * unpin一个页
+ * unpin一个页,使用GetPage会使pinCount+1,所以在GetThisPage的函数结束前，需要unpin页
  * 当结束一个页的操作时要调用该方法，将页的pinCount计数减1
  * 若pinCount计数值==0,表示有个进程刚刚使用完这个页，把它放到使用页的表头
  * @param fd        文件描述符号
@@ -344,7 +344,7 @@ RC PF_BufferMgr::UnpinPage(int fd, PageNum pageNum)
     // 如果pinCount减到0
     if (--(bufTable[slot].pinCount) == 0) {
         if ((rc = Unlink(slot)) ||
-            (rc = LinkHead (slot)))
+            (rc = LinkHead(slot)))
             return (rc);
     }
 
@@ -383,7 +383,9 @@ RC PF_BufferMgr::FlushPages(int fd)
                 // 将这个页从哈希桶中移除并加入到空闲链
                 if ((rc = hashTable.Delete(fd, bufTable[slot].pageNum)) ||
                     (rc = Unlink(slot)) ||
-                    (rc = InsertFree(slot)))  // 其实不需要再插入空闲链表
+                    (rc = InsertFree(slot)))  // 只有被回写过的槽，说明这个槽中的数据已经被保存了
+                                              // 槽的资源应该被释放
+                                              // 才会被加入到空闲页链表
                     return (rc);
             }
         }
@@ -896,11 +898,27 @@ RC PF_BufferMgr::AllocateBlock(char *&buffer)
 //
 // DisposeBlock
 //
-// Free the block of memory from the buffer pool.
+// 除了unpin页之外，还需要从哈希桶中释放资源
+// 并且将这个槽插入到空闲链表
+// 即与AllocateBlock的反向操作
 //
 RC PF_BufferMgr::DisposeBlock(const char* buffer)
 {
+    RC rc = OK_RC;
     long temp = (long)buffer;
     auto pageNum = PageNum(temp & 0x00000000ffffffff);
-    return UnpinPage(MEMORY_FD, pageNum);
+    SlotNum slot;
+    // 首先unpin这个页
+    if((rc = UnpinPage(MEMORY_FD, pageNum)))
+        return rc;
+
+    if((rc = hashTable.Find(MEMORY_FD,pageNum,slot)))
+        return rc;
+
+    // 将这个页从哈希桶中移除并加入到空闲链
+    if ((rc = hashTable.Delete(MEMORY_FD, pageNum)) ||
+        (rc = Unlink(slot)) ||
+        (rc = InsertFree(slot)))
+        return rc;
+    return rc;
 }
