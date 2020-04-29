@@ -60,18 +60,22 @@ RC PF_Manager::CreateFile (const char *fileName)
 
     // Initialize the file header: must reserve FileHdrSize bytes in memory
     // though the actual size of FileHdr is smaller
-    char hdrBuf[PF_FILE_HDR_SIZE];
+    char hdrBuf[PF_PAGE_SIZE];
 
     // So that Purify doesn't complain
-    memset(hdrBuf, 0, PF_FILE_HDR_SIZE);
+    memset(hdrBuf, 0, PF_PAGE_SIZE);
 
     PF_FileHdr *hdr = (PF_FileHdr*)hdrBuf;
     hdr->firstFree = PF_PAGE_LIST_END;
     hdr->numPages = 0;
 
     // Write header to file
-    if((numBytes = write(fd, hdrBuf, PF_FILE_HDR_SIZE))
-       != PF_FILE_HDR_SIZE) {
+    // 从页的数据项开始写内容
+    long offset = sizeof(PF_PageHdr);
+    if (lseek(fd, offset, L_SET) < 0)
+        return (PF_UNIX);
+    if((numBytes = write(fd, hdrBuf, PF_PAGE_SIZE))
+       != PF_PAGE_SIZE) {
 
         // Error while writing: close and remove file
         close(fd);
@@ -141,6 +145,7 @@ RC PF_Manager::OpenFile (const char *fileName, PF_FileHandle &fileHandle)
         goto err;
     }
     // 上面的代码执行之后，hdr将指向缓冲区中的地址
+    // fileHandle.hdr将指向缓冲区
 
     // Set file header to be not changed
     fileHandle.bHdrChanged = FALSE;
@@ -155,10 +160,10 @@ RC PF_Manager::OpenFile (const char *fileName, PF_FileHandle &fileHandle)
     err:
     // 打开文件失败
     // Close file
+    fileHandle.UnpinPage(PF_FILE_HDR_PAGENUM);
     close(fileHandle.unixfd);
     fileHandle.bFileOpen = FALSE;
 
-    // Return error
     return rc;
 }
 
@@ -177,6 +182,10 @@ RC PF_Manager::CloseFile(PF_FileHandle &fileHandle)
     // 检查
     if (!fileHandle.bFileOpen)
         return (PF_CLOSEDFILE);
+    // 由于OpenFile时，会一直保持对文件头页的pin,所以关闭文件
+    // 将所有页回写之前，要将文件头页unpin
+    if((rc = fileHandle.UnpinPage(PF_FILE_HDR_PAGENUM)))
+        return rc;
     // 调用方法将所有页回写磁盘
     if ((rc = fileHandle.FlushPages()))
         return (rc);

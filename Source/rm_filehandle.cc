@@ -23,7 +23,7 @@
 RM_FileHandle::RM_FileHandle(){
     this->ifHeaderModified = FALSE;
     this->pfh = NULL;
-    this->isOpened = TRUE;
+    this->isOpened = FALSE;
 }
 
 /**

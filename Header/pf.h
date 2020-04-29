@@ -118,6 +118,9 @@ public:
     // 将pageNum的页回写磁盘，但不需要释放缓冲区
     RC ForcePages  (PageNum pageNum=ALL_PAGES) const;
 
+    // 由于上层的操作导致文件头页被修改时，提供给上层函数调用
+    RC SetHdrChanged();
+
 
 private:
 

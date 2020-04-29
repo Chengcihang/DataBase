@@ -35,16 +35,16 @@ RC RM_Manager::CreateFile (const char *fileName, int recordSize) {
     if(fileName == NULL)
         return RM_BADFILENAME;
     // 记录长度限制,一条记录不能超过1页
-    if(recordSize <= 0 || recordSize > PF_PAGEDATA_SIZE)
+    if(recordSize <= 0 || recordSize > PF_PAGE_SIZE)
         return RM_BADRECORDSIZE;
 
     // 这里具体数值可能会出现问题
     // 每页的记录上限
-    int numRecordsPerPage = (int)((PF_PAGEDATA_SIZE - sizeof(RM_PageHeader)) / (recordSize + 1.0 / 8));
+    int numRecordsPerPage = (int)((PF_PAGE_SIZE - sizeof(RM_PageHeader)) / (recordSize + 1.0 / 8));
     // bitMap占用的字节数
     int bitmapSize = (numRecordsPerPage + 1) / 8;
 
-    if( (PF_PAGEDATA_SIZE - bitmapSize - sizeof(RM_PageHeader))/recordSize <= 0)
+    if( (PF_PAGE_SIZE - bitmapSize - sizeof(RM_PageHeader))/recordSize <= 0)
         return RM_BADRECORDSIZE;
 
 
@@ -59,21 +59,21 @@ RC RM_Manager::CreateFile (const char *fileName, int recordSize) {
 
     RM_FileHeader *header;
     // 打开这个文件，写入数据表头信息
-    // OpenFile会从磁盘上读取数据写入到pfFileHandle的内存中
+    // OpenFile会从磁盘上将文件头页加载到缓冲区
     // 即得到了这个文件的信息
-    if((rc = pfm.OpenFile(fileName, pfFileHandle)))
+    if((rc = pfm.OpenFile(fileName, pfFileHandle)))  //pin=1
         return (rc);
 
     // 得到这个文件的表头页，也就是页号为-1的页，此操作会在缓冲池中申请一个页的空间，用来存放表头页
     // 表头会被封装成页
     PF_PageHandle fileHdrPage;
-    if((rc = pfFileHandle.GetThisPage(PF_FILE_HEADER_PAGENUM,fileHdrPage)))
+    if((rc = pfFileHandle.GetThisPage(PF_FILE_HDR_PAGENUM,fileHdrPage))) //pin=2
         return rc;
-    // 将这个页强制装换类型
-    char * hdrPage = (char *)&fileHdrPage;
 
-    // 跳过文件头写入数据
-    hdrPage += sizeof(PF_FileHdr);
+    // 得到数据的地址
+    char * hdrPage;
+    fileHdrPage.GetPageData(hdrPage);
+
     // 从文件头之后的内容就是数据表头
     header = (RM_FileHeader *) hdrPage;
     header->recordSize = recordSize;
@@ -83,11 +83,15 @@ RC RM_Manager::CreateFile (const char *fileName, int recordSize) {
     header->numPages = 0;
 
     // 缓冲区中的表头被修改，创建表的工作不是经常的，以防万一
-    // 在函数结束时，将表头页回写
-    RC rc2;
-    if((rc2 = pfFileHandle.MarkDirty(PF_FILE_HEADER_PAGENUM)) || (rc2 = pfFileHandle.UnpinPage(PF_FILE_HEADER_PAGENUM))
-    ||(rc2 = pfFileHandle.ForcePages(PF_FILE_HEADER_PAGENUM))|| (rc2 = pfm.CloseFile(pfFileHandle)))
+    pfFileHandle.SetHdrChanged();
+
+    // 在函数结束时，关闭文件，将表头页回写
+    RC rc2 = OK_RC;
+    if((rc2 = pfFileHandle.MarkDirty(PF_FILE_HDR_PAGENUM)) || (rc2 = pfFileHandle.UnpinPage(PF_FILE_HDR_PAGENUM))
+    || (rc2 = pfm.CloseFile(pfFileHandle)))
         return rc2;
+
+    return OK_RC;
 }
 
 // 删除文件，调用文件管理模块删除文件
@@ -143,36 +147,48 @@ RC RM_Manager::OpenFile   (const char *fileName, RM_FileHandle &fileHandle){
         return RM_INVALIDFILEHANDLE;
 
     RC rc;
-    // 打开文件
-    PF_FileHandle file;
+    // 打开文件, file必须被保存在内存中，当close数据表时清除
+    PF_FileHandle file;  // 在栈中创建一个文件对象，之后需要将其保存在内存上
+    // 打开文件，将文件头页加载进内存，pfFileHandle构造出文件对象
     if((rc = pfm.OpenFile(fileName, file)))
         return rc;
 
-    // 将表头页加载进内存
+    // 在缓冲区中申请一块地址来保存file;
+    char *pf;
+    pfm.AllocateBlock(pf);        //pf为内存中的地址
+
+    // 复制
+    memcpy(pf,&file,sizeof(PF_FileHandle));
+    PF_FileHandle *pfFileHandle = (PF_FileHandle *)pf;
+
     PF_PageHandle fileHdrPage;
     PageNum pageNum;
-    if((rc = file.GetThisPage(PF_FILE_HEADER_PAGENUM,fileHdrPage))){
-        file.UnpinPage(fileHdrPage.GetPageNum());
-        pfm.CloseFile(file);
+    if((rc = pfFileHandle->GetThisPage(PF_FILE_HDR_PAGENUM,fileHdrPage))){
+        // 如果失败了，unping这个页，关闭这个文件，并且释放空间
+        pfFileHandle->UnpinPage(fileHdrPage.GetPageNum());
+        pfm.CloseFile(*pfFileHandle);
+        pfm.DisposeBlock((char *)pfFileHandle);
         return rc;
     }
 
-    // 将这个页强制装换类型
-    char * hdrPage = (char *)&fileHdrPage;
-    hdrPage += sizeof(PF_FileHdr);
+    // 得到文件头页中数据表头的地址，
+    char * hdrPage;
+    fileHdrPage.GetPageData(hdrPage);
     RM_FileHeader* hdr = (RM_FileHeader *)hdrPage;
 
     // 关联
-    SetUpFH(fileHandle, file, hdr);
+    SetUpFH(fileHandle, *pfFileHandle, hdr);
 
     RC rc2;
 
-    if((rc2 = file.UnpinPage(fileHdrPage.GetPageNum())))
+    if((rc2 = pfFileHandle->UnpinPage(fileHdrPage.GetPageNum())))
         return (rc2);
 
     if(rc != OK_RC){
-        pfm.CloseFile(file);
+        pfm.CloseFile(*pfFileHandle);
     }
+    // 设置打开标志
+    fileHandle.isOpened = TRUE;
     return OK_RC;
 }
 
@@ -203,18 +219,18 @@ RC RM_Manager::CloseFile  (RM_FileHandle &fileHandle) {
     PF_PageHandle fileHdrPage;
     if(fileHandle.ifHeaderModified == TRUE){
         //将RM_FileHandle.RM_FileHdr中修改的数据拷贝到对应的文件头页中
-        if((rc = fileHandle.pfh->GetThisPage(PF_FILE_HEADER_PAGENUM,fileHdrPage)))
+        if((rc = fileHandle.pfh->GetThisPage(PF_FILE_HDR_PAGENUM,fileHdrPage)))
             return rc;
 
-        // 找到数据项的地址
-        char *pData = (char *)&fileHdrPage;
-        pData += sizeof(PF_FileHdr);
+        // 找到文件头数据之后的地址
+        char *pPage;
+        fileHdrPage.GetPageData(pPage);
 
-        // 复制RM_FileHandle.RM_Hdr中的内容到pdata
-        memcpy(pData, &fileHandle.tableHeader, sizeof(RM_FileHeader));
+        // 复制RM_FileHandle.RM_Hdr中的内容到PF_Hdr之后
+        memcpy(pPage, &fileHandle.tableHeader, sizeof(RM_FileHeader));
         // 将缓冲区中的文件头页标记为脏页，并unpin
-        if((rc = fileHandle.pfh->MarkDirty(PF_FILE_HEADER_PAGENUM))
-        || (rc = fileHandle.pfh->UnpinPage(PF_FILE_HEADER_PAGENUM)))
+        if((rc = fileHandle.pfh->MarkDirty(PF_FILE_HDR_PAGENUM))
+        || (rc = fileHandle.pfh->UnpinPage(PF_FILE_HDR_PAGENUM)))
             return (rc);
     }
     // 如果没有被修改就啥都不用做
@@ -223,6 +239,9 @@ RC RM_Manager::CloseFile  (RM_FileHandle &fileHandle) {
     if((rc = pfm.CloseFile(*fileHandle.pfh)))
         return rc;
 
+    // 由于OpenFile时在缓冲区中申请了空间，需要释放掉
+    if(fileHandle.pfh != NULL)
+        pfm.DisposeBlock((char *)fileHandle.pfh);
     // 数据表清除
     if((rc = CleanUpFH(fileHandle)))
         return (rc);

@@ -13,13 +13,29 @@ int main() {
     RC rc = OK_RC;
     RM_FileHandle table;
     int recordSize = 10;  // 记录十个字节
-    rmManager.CreateFile("FirstTable",recordSize);
+
+    if((rc = rmManager.CreateFile("FirstTable",recordSize)))
+        printf("文件创建失败%d\n",rc);
+    else{
+        printf("文件FirstTable创建成功...");
+    }
 
     // 打开数据表
-    if((rc = rmManager.OpenFile("FirtTable",table)))
-        printf("%d",rc);
+    if((rc = rmManager.OpenFile("FirstTable",table)))
+        printf("打开数据表失败...%d\n",rc);
+    else{
+        printf("打开数据表成功...");
+    }
 
-    // 输出u缓冲区
+    // 输出缓冲区
     pfManager->PrintBuffer();
+
+    // 关闭数据表
+    if((rc = rmManager.CloseFile(table)))
+        printf("关闭数据表失败%d\n",rc);
+    else{
+        printf("关闭数据表成功...");
+    }
+
     return 0;
 }

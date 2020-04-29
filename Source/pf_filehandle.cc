@@ -165,8 +165,8 @@ RC PF_FileHandle::GetThisPage(PageNum pageNum, PF_PageHandle &pageHandle) const
     if ((rc = pBufferMgr->GetPage(unixfd, pageNum, &pPageBuf)))
         return (rc);
 
-    // 该页是有效页
-    if (((PF_PageHdr*)pPageBuf)->nextFree == PF_PAGE_USED) {
+    // 该页是有效页 或者是 文件头页
+    if (((PF_PageHdr*)pPageBuf)->nextFree == PF_PAGE_USED || pageNum == PF_FILE_HDR_PAGENUM) {
         // 设置页号
         pageHandle.SetPageNum(pageNum);
         // 设置页数据
@@ -343,7 +343,8 @@ RC PF_FileHandle::UnpinPage(PageNum pageNum) const
 }
 
 /**
- * 将该文件的所有页都回写磁盘
+ * 将该文件的所有页都回写磁盘，如果头文件页被修改
+ * 则会将文件头页回写
  * 使用时请确保所有的页的pinCount都为0,否则报错
  * @return
  */
@@ -355,25 +356,25 @@ RC PF_FileHandle::FlushPages() const
 
     // 文件头发生了修改，需要将文件头所在的页fd/PF_FILEHDR_PAGENUM回写
     if (bHdrChanged) {
-        // 文件头的便宜为0
-        if (lseek(unixfd, 0, L_SET) < 0)
-            return (PF_UNIX);
-
-        // 整个文件页都回写
-        int numBytes = write(unixfd,
-                             (char *)hdr,
-                             PF_FILE_HDR_SIZE);
-        if (numBytes < 0)
-            return (PF_UNIX);
-        if (numBytes != PF_FILE_HDR_SIZE)
-            return (PF_HDRWRITE);
+//        // 文件头的便宜为0
+//        if (lseek(unixfd, 0, L_SET) < 0)
+//            return (PF_UNIX);
+//
+//        // 整个文件页都回写
+//        int numBytes = write(unixfd,
+//                             (char *)hdr,
+//                             PF_FILE_HDR_SIZE);
+//        if (numBytes < 0)
+//            return (PF_UNIX);
+//        if (numBytes != PF_FILE_HDR_SIZE)
+//            return (PF_HDRWRITE);
+        // 将文件头所在的页回写磁盘
+        pBufferMgr->ForcePages(unixfd,PF_FILE_HDR_PAGENUM);
 
         // 标志位重置
         PF_FileHandle *dummy = (PF_FileHandle *)this;
         dummy->bHdrChanged = FALSE;
     }
-    // 将文件头所在的页回写磁盘
-    pBufferMgr->ForcePages(unixfd,PF_FILE_HDR_PAGENUM);
 
     // 调用缓冲区的方法将所有页回写
     return (pBufferMgr->FlushPages(unixfd));
@@ -415,9 +416,13 @@ RC PF_FileHandle::ForcePages(PageNum pageNum) const
 // 页号大于等于-1(文件头的页号)，小于总页数
 int PF_FileHandle::IsValidPageNum(PageNum pageNum) const
 {
-    return (bFileOpen &&
-            pageNum >= PF_FILE_HDR_PAGENUM &&
-            pageNum < hdr->numPages);
+    if(hdr == NULL){
+        return bFileOpen && pageNum >= PF_FILE_HDR_PAGENUM;
+    } else{
+        return (bFileOpen &&
+                pageNum >= PF_FILE_HDR_PAGENUM &&
+                pageNum < hdr->numPages);
+    }
 }
 
 /**
@@ -430,6 +435,11 @@ RC PF_FileHandle::GetFileHdrPage(PF_PageHandle &hdrPage) const {
     // 调用GetThisPage方法直接获得页号为PF_FILE_HDR_PAGENUM的页，这个页就是文件头页
     if((rc = GetThisPage(PF_FILE_HDR_PAGENUM,hdrPage)))
         return rc;
+    return OK_RC;
+}
+
+RC PF_FileHandle::SetHdrChanged() {
+    this->bHdrChanged = TRUE;
     return OK_RC;
 }
 

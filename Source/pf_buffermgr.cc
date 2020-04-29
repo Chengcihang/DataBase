@@ -180,7 +180,7 @@ RC PF_BufferMgr::GetPage(int fd, PageNum pageNum, char **ppBuffer,
         (rc != PF_HASHNOTFOUND))
         return (rc);                // unexpected error
 
-    // 如果没有找到，分配一个槽，并从磁盘上读取这个页
+    // 如果没有找到，分配一个槽，先从磁盘上读取这个页
     if (rc == PF_HASHNOTFOUND) {
 
 #ifdef PF_STATS
@@ -194,22 +194,16 @@ RC PF_BufferMgr::GetPage(int fd, PageNum pageNum, char **ppBuffer,
         if ((rc = ReadPage(fd, pageNum, bufTable[slot].pPage)) ||
             (rc = hashTable.Insert(fd, pageNum, slot)) ||
             (rc = InitPageDesc(fd, pageNum, slot))) {
+            // InitPageDesc会将pinCount设置为1
 
             // 若出事，需要将这个槽放入到空闲链表,健壮！
             Unlink(slot);
             InsertFree(slot);
             return rc;
         }
-#ifdef PF_LOG
-        WriteLog("Page not found in buffer. Loaded.\n");
-#endif
-    }
-    else {
-        // 找到这个页，pinCount计数器加一
+    }else{
+        //GetPage方法会导致pinCount计数器加一
 
-#ifdef PF_STATS
-        pStatisticsMgr->Register(PF_PAGEFOUND, STAT_ADDONE);
-#endif
 
         // Error if we don't want to get a pinned page
         if (!bMultiplePins && bufTable[slot].pinCount > 0)
@@ -217,13 +211,7 @@ RC PF_BufferMgr::GetPage(int fd, PageNum pageNum, char **ppBuffer,
 
         // Page is alredy in memory, just increment pin count
         bufTable[slot].pinCount++;
-#ifdef PF_LOG
-        sprintf (psMessage, "Page found in buffer.  %d pin count.\n",
-            bufTable[slot].pinCount);
-      WriteLog(psMessage);
-#endif
     }
-
     // 标记这个槽为最近使用的槽
     if ((rc = Unlink(slot)) ||
         (rc = LinkHead (slot)))
@@ -395,7 +383,7 @@ RC PF_BufferMgr::FlushPages(int fd)
                 // 将这个页从哈希桶中移除并加入到空闲链
                 if ((rc = hashTable.Delete(fd, bufTable[slot].pageNum)) ||
                     (rc = Unlink(slot)) ||
-                    (rc = InsertFree(slot)))
+                    (rc = InsertFree(slot)))  // 其实不需要再插入空闲链表
                     return (rc);
             }
         }
