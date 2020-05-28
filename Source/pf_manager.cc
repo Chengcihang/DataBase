@@ -40,7 +40,8 @@ PF_Manager::~PF_Manager()
 //
 // CreateFile
 //
-// Desc: Create a new PF file named fileName
+// Desc: 根据文件名在系统中创建一个文件，并注册文件描述符
+//       将文件头页的页头写入磁盘文件
 // In:   fileName - name of file to create
 // Ret:  PF return code
 //
@@ -60,22 +61,24 @@ RC PF_Manager::CreateFile (const char *fileName)
 
     // Initialize the file header: must reserve FileHdrSize bytes in memory
     // though the actual size of FileHdr is smaller
-    char hdrBuf[PF_PAGE_SIZE];
+    // char hdrBuf[PF_PAGE_SIZE];
+    char hdrBuf[sizeof(PF_FileHdr)];
 
     // So that Purify doesn't complain
-    memset(hdrBuf, 0, PF_PAGE_SIZE);
+    memset(hdrBuf, 0, sizeof(PF_FileHdr));
 
     PF_FileHdr *hdr = (PF_FileHdr*)hdrBuf;
     hdr->firstFree = PF_PAGE_LIST_END;
     hdr->numPages = 0;
 
     // Write header to file
-    // 从页的数据项开始写内容
-    long offset = sizeof(PF_PageHdr);
+//    // 从页的数据项开始写内容
+//    long offset = sizeof(PF_PageHdr);
+    long offset = 0;
     if (lseek(fd, offset, L_SET) < 0)
         return (PF_UNIX);
-    if((numBytes = write(fd, hdrBuf, PF_PAGE_SIZE))
-       != PF_PAGE_SIZE) {
+    if((numBytes = write(fd, hdrBuf, sizeof(PF_FileHdr)))
+       != sizeof(PF_FileHdr)) {
 
         // Error while writing: close and remove file
         close(fd);
@@ -99,7 +102,7 @@ RC PF_Manager::CreateFile (const char *fileName)
 //
 // DestroyFile
 //
-// Desc: Delete a PF file named fileName (fileName must exist and not be open)
+// Desc: 销毁一个文件
 // In:   fileName - name of file to delete
 // Ret:  PF return code
 //

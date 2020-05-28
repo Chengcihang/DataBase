@@ -84,10 +84,10 @@ private:
     // 得到记录的字节数
     int GetRecordSize() const;
 
-    Boolean isOpened;               // 数据表被打开标识,从磁盘读取时，设置为TRUE,回写磁盘前设置为FALSE
+    Boolean isOpened;                // 数据表被打开标识,从磁盘读取时，设置为TRUE,回写磁盘前设置为FALSE
     RM_FileHeader tableHeader{};     // 数据表信息头，保存在与之相关连的文件头中
-    PF_FileHandle *pfh;              // 数据表对应的文件，pfh的栈中
-    Boolean ifHeaderModified;       // header如果修改，回写时需要覆盖原来的文件头
+    PF_FileHandle *pfh;              // 数据表对应的文件实例对象地址
+    Boolean ifHeaderModified;        // header如果修改，回写时需要覆盖原来的文件头
 };
 
 /**

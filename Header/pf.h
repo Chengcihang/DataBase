@@ -21,12 +21,21 @@ typedef struct PF_PageHdr {
 // 页中有效数据的空间大小
 const int PF_PAGE_SIZE = 4096 - sizeof(PF_PageHdr);
 
+/**
+ * 文件头也占用一个页的位置
+ * 文件头的数据从页的pageData的位置开始写
+ * 而不是从pData的位置开始写，方便管理
+ */
+typedef struct PF_FileHdr {
+    PageNum firstFree;     // first free page in the linked list
+    int numPages;          // # of pages in the file
+}PF_FileHdr ;
 
 /**
  * 页在内存中由页头和页内数据两部分组成
- * PF_PageHandle的对象创建在栈中
- * pageNum表示了PF_PageHandle关联的页
- * *pPage 保存了内存中整个页的首地址
+ * pageNum为页号；*pPage为内存中整个页的首地址
+ * 页的类型有两种，文件头页和文件内容页，两者用页号进行区分
+ * 文件头页的页号为PF_FILE_HDR_PAGENUM；文件内容页的页号为非负数
  */
 class PF_PageHandle {
     //friend class PF_FileHandle;
@@ -40,33 +49,26 @@ public:
     // Overloaded =
     PF_PageHandle& operator=(const PF_PageHandle &pageHandle);
 
-    RC GetPageData     (char *&pData) const;            // 得到页数据的地址
+    RC GetPageData     (char *&pData) const;            // 得到该页除了页头信息的数据
 
     RC GetPageHdr      (PF_PageHdr &pageHdr) const ;    // 得到这个页的页头
 
     RC SetPageHdr      (PF_PageHdr pageHdr) const ;     // 设置这个页的页头
 
+    RC GetPageHdr      (PF_FileHdr &pageHdr) const ;    // 得到这个文件头页的页头
+
+    RC SetPageHdr      (PF_FileHdr pageHdr) const ;     // 设置这个文件头页的页头
+
     PageNum GetPageNum () const ;                       // 得到页号
 
     RC SetPageNum      (PageNum pageNum);               // 设置页号
 
-    RC SetPageData     (char *pPage);               // 设置数据地址
+    RC SetPageData     (char *pPage);                   // 设置数据
 
 private:
-    PageNum pageNum;                               // page number
-    char *pPage;                                   // 这个页在内存中的地址
+    PageNum pageNum;                                    // page number
+    char *pPage;                                        // 这个页在缓冲池中的地址
 };
-
-/**
- * 文件头也占用一个页的位置
- * 文件头的数据从页的pageData的位置开始写
- * 而不是从pData的位置开始写，方便管理
- */
-typedef struct PF_FileHdr {
-    PageNum firstFree;     // first free page in the linked list
-    int numPages;          // # of pages in the file
-}PF_FileHdr ;
-
 
 /**
  * PF_FileHandle的大部分操作是调用缓冲区管理类的方法
@@ -103,8 +105,9 @@ public:
     // 得到当前页的上一页
     RC GetPrevPage (PageNum current, PF_PageHandle &pageHandle) const;
 
-    RC AllocatePage(PF_PageHandle &pageHandle);    // Allocate a new page
-    RC DisposePage (PageNum pageNum);              // Dispose of a page
+    RC AllocatePage(PF_PageHandle &pageHandle);    // 为文件再分配一个页
+
+    RC DisposePage (PageNum pageNum);              // 回收文件的一个页
 
     // 标记脏页
     RC MarkDirty   (PageNum pageNum) const;
@@ -123,11 +126,9 @@ public:
 
 
 private:
-
     // 由于提供的接口参数大多为pageNum
     // 因此有必要对页号进行有效性判断
     int IsValidPageNum (PageNum pageNum) const;
-
     PF_FileHdr *hdr;                               // 缓冲区中文件头的地址
     Boolean bFileOpen;                             // 文件打开标志，当文件头页被加载i到缓冲区中时为TRUE
     Boolean bHdrChanged;                           // 文件头是否被修改标志

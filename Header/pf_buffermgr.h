@@ -79,10 +79,10 @@ public:
     RC DisposeBlock  (const char *buffer);
 
 private:
-    RC  InsertFree   (SlotNum slot);                 // Insert slot at head of free
-    RC  LinkHead     (SlotNum slot);                 // Insert slot at head of used
-    RC  Unlink       (SlotNum slot);                 // Unlink slot
-    RC  InternalAlloc(SlotNum &slot);                // Get a slot to use
+    RC  InsertFree   (SlotNum slot);                 // 把slot插入到空闲链表头部
+    RC  LinkHead     (SlotNum slot);                 // 将slot槽插入到使用槽链表的表头
+    RC  Unlink       (SlotNum slot);                 // 将slot解链，就是链接slot两边的链
+    RC  InternalAlloc(SlotNum &slot);                // 分配一个可用的空闲槽的槽号
 
     // 从磁盘上根据文件描述符和页号，将真个页的数据(4KB)加载进缓冲区，dest==pPage;
     RC  ReadPage     (int fd, PageNum pageNum, char *dest);

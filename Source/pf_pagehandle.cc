@@ -92,8 +92,11 @@ RC PF_PageHandle::GetPageData(char *&pData) const
     if (pPage == NULL)
         return (PF_PAGEUNPINNED);
 
-    // 设置pData为页数据的地址(在页头之后)
-    pData = pPage + sizeof(PF_PageHdr);
+    if (pageNum == PF_FILE_HDR_PAGENUM)     // 文件头页
+        pData = pPage + sizeof(PF_FileHdr);
+
+    else    // 设置pData为页数据的地址(在页头之后)
+        pData = pPage + sizeof(PF_PageHdr); // 文件内容页
 
     // Return OK_RC
     return OK_RC;
@@ -116,6 +119,9 @@ RC PF_PageHandle::SetPageNum(PageNum pageNum) {
  *         OK_RC       成功
  */
 RC PF_PageHandle::GetPageHdr(PF_PageHdr &pageHdr) const {
+    // 该方法是内容页的文件头方法
+    if(pageNum == PF_FILE_HDR_PAGENUM)
+        return PF_PAGEFREE;     // 这里随便返回一个错误
     // 检查pPage非空
     if(pPage == NULL)
         return PF_PAGEFREE;
@@ -132,6 +138,9 @@ RC PF_PageHandle::GetPageHdr(PF_PageHdr &pageHdr) const {
  *         OK_RC       成功
  */
 RC PF_PageHandle::SetPageHdr(PF_PageHdr pageHdr) const {
+    // 这是文件内容页的set方法
+    if(pageNum == PF_FILE_HDR_PAGENUM)
+        return PF_PAGEFREE;
     // 检查pPage非空
     if(pPage == NULL)
         return PF_PAGEFREE;
@@ -161,6 +170,32 @@ PF_PageHandle::PF_PageHandle(PageNum pageNum, char *pPage) {
  */
 RC PF_PageHandle::SetPageData(char *pPage) {
     this->pPage = pPage;
+    return OK_RC;
+}
+
+RC PF_PageHandle::SetPageHdr(PF_FileHdr pageHdr) const {
+    // 这是文件头页的set方法
+    if(pageNum != PF_FILE_HDR_PAGENUM)
+        return PF_PAGEFREE;
+    // 检查pPage非空
+    if(pPage == NULL)
+        return PF_PAGEFREE;
+    // 取pPage前PF_PageHdr字节
+
+    // 将pageHdr复制到缓冲区中的对应位置
+    memcpy(this->pPage,&pageHdr,sizeof(PF_FileHdr));
+    return OK_RC;
+}
+
+RC PF_PageHandle::GetPageHdr(PF_FileHdr &pageHdr) const {
+    // 该方法是文件头页的文件头方法
+    if(pageNum != PF_FILE_HDR_PAGENUM)
+        return PF_PAGEFREE;     // 这里随便返回一个错误
+    // 检查pPage非空
+    if(pPage == NULL)
+        return PF_PAGEFREE;
+    // 取pPage前PF_PageHdr字节
+    pageHdr = *(PF_FileHdr*)this->pPage;
     return OK_RC;
 }
 

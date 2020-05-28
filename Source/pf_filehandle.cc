@@ -85,7 +85,7 @@ PF_FileHandle& PF_FileHandle::operator= (const PF_FileHandle &fileHandle)
 
 
 /**
- * 得到当前页的下一个页，中间有些页可能无效
+ * 得到当前页的下一个有效页，中间有些页可能无效
  * 这个方法是返回current之后可用的页
  * @param current       当前页号
  * @param pageHandle    下一个页对象
@@ -143,7 +143,11 @@ RC PF_FileHandle::GetPrevPage(PageNum current, PF_PageHandle &pageHandle) const
 
 /**
  * 得到这个文件的第pageNum的页
- * 调用缓冲去的GetPage方法，得到这个页
+ * 原理：
+ *   检查文件是否打开，页号是否正确
+ *   调用缓冲区的GetPage方法，得到这个页
+ *   这是页号和页数据
+ *   由于调用了GetPage方法，若失败则调用unpin方法
  * @param pageNum       页号
  * @param pageHandle    页实例
  * @return
@@ -176,7 +180,7 @@ RC PF_FileHandle::GetThisPage(PageNum pageNum, PF_PageHandle &pageHandle) const
     }
 
     // 如果操作失败需要UnpinPage
-    if ((rc = UnpinPage(pageNum)))
+    if ((rc = pBufferMgr->UnpinPage(unixfd,pageNum)))
         return (rc);
 
     return (PF_INVALIDPAGE);
@@ -185,11 +189,8 @@ RC PF_FileHandle::GetThisPage(PageNum pageNum, PF_PageHandle &pageHandle) const
 //
 // AllocatePage
 //
-// Desc: Allocate a new page in the file (may get a page which was
-//       previously disposed)
-//       The file handle must refer to an open file
-// Out:  pageHandle - becomes a handle to the newly-allocated page
-//                    this function modifies local var's in pageHandle
+// Desc: 为该文件分配一个可用页
+// Out:  pageHandle - 分配的可用页
 // Ret:  PF return code
 //
 RC PF_FileHandle::AllocatePage(PF_PageHandle &pageHandle)
@@ -198,48 +199,48 @@ RC PF_FileHandle::AllocatePage(PF_PageHandle &pageHandle)
     int     pageNum;          // new-page number
     char    *pPageBuf;        // address of page in buffer pool
 
-    // File must be open
+    // 检查文件是否打开
     if (!bFileOpen)
         return (PF_CLOSEDFILE);
 
-    // If the free list isn't empty...
+    // 文件上有空余的页，使用这个页
     if (hdr->firstFree != PF_PAGE_LIST_END) {
         pageNum = hdr->firstFree;
 
-        // Get the first free page into the buffer
+        // 将该页加载进缓冲区
         if ((rc = pBufferMgr->GetPage(unixfd,
                                       pageNum,
                                       &pPageBuf)))
             return (rc);
 
-        // Set the first free page to the next page on the free list
+        // 文件头信息修改
         hdr->firstFree = ((PF_PageHdr*)pPageBuf)->nextFree;
     }
     else {
 
-        // The free list is empty...
+        // 没有可用的空闲页，新页的页号就是页数
         pageNum = hdr->numPages;
 
-        // Allocate a new page in the file
+        // 追加一个新页，这个新页暂时存在缓冲区中，调用缓冲区的AllocatePage方法
         if ((rc = pBufferMgr->AllocatePage(unixfd,
                                            pageNum,
                                            &pPageBuf)))
             return (rc);
 
-        // Increment the number of pages for this file
+        // 文件数目增加
         hdr->numPages++;
     }
 
-    // Mark the header as changed
+    // 上述两种情况都需要修改文件头页页头信息
     bHdrChanged = TRUE;
 
-    // Mark this page as used
+    // 标记这个页被使用了
     ((PF_PageHdr *)pPageBuf)->nextFree = PF_PAGE_USED;
 
-    // Zero out the page data
+    // 数据初始化
     memset(pPageBuf + sizeof(PF_PageHdr), 0, PF_PAGE_SIZE);
 
-    // Mark the page dirty because we changed the next pointer
+    // 标记该页为脏页
     if ((rc = MarkDirty(pageNum)))
         return (rc);
 
@@ -247,17 +248,13 @@ RC PF_FileHandle::AllocatePage(PF_PageHandle &pageHandle)
     pageHandle.SetPageNum(pageNum);
     pageHandle.SetPageData(pPageBuf);
 
-    // Return ok
     return OK_RC;
 }
 
 //
 // DisposePage
 //
-// Desc: Dispose of a page
-//       The file handle must refer to an open file
-//       PF_PageHandle objects referring to this page should not be used
-//       after making this call.
+// Desc: 在文件中将该页加入到空页的页首
 // In:   pageNum - number of page to dispose
 // Ret:  PF return code
 //
@@ -266,15 +263,15 @@ RC PF_FileHandle::DisposePage(PageNum pageNum)
     int     rc;               // return code
     char    *pPageBuf;        // address of page in buffer pool
 
-    // File must be open
+    // 检查文件是否打开
     if (!bFileOpen)
         return (PF_CLOSEDFILE);
 
-    // Validate page number
+    // 检查页号是否有效
     if (!IsValidPageNum(pageNum))
         return (PF_INVALIDPAGE);
 
-    // Get the page (but don't re-pin it if it's already pinned)
+    // 获取这个页
     if ((rc = pBufferMgr->GetPage(unixfd,
                                   pageNum,
                                   &pPageBuf,
@@ -284,7 +281,7 @@ RC PF_FileHandle::DisposePage(PageNum pageNum)
     // Page must be valid (used)
     if (((PF_PageHdr *)pPageBuf)->nextFree != PF_PAGE_USED) {
 
-        // Unpin the page
+        // Unpin这个页
         if ((rc = UnpinPage(pageNum)))
             return (rc);
 
@@ -292,17 +289,13 @@ RC PF_FileHandle::DisposePage(PageNum pageNum)
         return (PF_PAGEFREE);
     }
 
-    // Put this page onto the free list
+    // 把这个页加入到空闲页的页首
     ((PF_PageHdr *)pPageBuf)->nextFree = hdr->firstFree;
     hdr->firstFree = pageNum;
     bHdrChanged = TRUE;
 
-    // Mark the page dirty because we changed the next pointer
-    if ((rc = MarkDirty(pageNum)))
-        return (rc);
-
-    // Unpin the page
-    if ((rc = UnpinPage(pageNum)))
+    // 标记为脏页并且Unpin这个页
+    if ((rc = MarkDirty(pageNum)) || (rc = UnpinPage(pageNum)))
         return (rc);
 
     // Return ok
