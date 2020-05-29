@@ -14,15 +14,19 @@ int main() {
     RM_FileHandle table;
     int recordSize = 10;  // 记录十个字节
 
-    if((rc = rmManager.CreateFile("FirstTable",recordSize)))
-        printf("\n文件创建失败%d\n",rc);
+    if((rc = rmManager.CreateFile("FirstTable",recordSize))){
+        printf("\n文件创建失败...\n");
+        RM_PrintError(rc);
+    }
     else{
         printf("\n文件FirstTable创建成功...\n");
     }
 
     // 打开数据表
-    if((rc = rmManager.OpenFile("FirstTable",table)))
-        printf("\n打开数据表失败...%d\n",rc);
+    if((rc = rmManager.OpenFile("FirstTable",table))){
+        printf("\n打开数据表失败...\n");
+        RM_PrintError(rc);
+    }
     else{
         printf("\n打开数据表成功...\n");
     }
@@ -31,8 +35,10 @@ int main() {
     pfManager->PrintBuffer();
 
     // 关闭数据表
-    if((rc = rmManager.CloseFile(table)))
-        printf("\n关闭数据表失败%d\n",rc);
+    if((rc = rmManager.CloseFile(table))){
+        printf("\n关闭数据表失败...\n");
+        RM_PrintError(rc);
+    }
     else{
         printf("\n关闭数据表成功...\n");
     }
@@ -41,8 +47,10 @@ int main() {
     pfManager->PrintBuffer();
 
     // 删除数据表
-    if((rc = rmManager.DestroyFile("FirstTable")))
-        printf("删除数据表失败...%d\n",rc);
+    if((rc = rmManager.DestroyFile("FirstTable"))){
+        printf("删除数据表失败...\n");
+        RM_PrintError(rc);
+    }
     else{
         printf("\n删除数据表成功...\n");
     }

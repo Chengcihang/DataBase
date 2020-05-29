@@ -47,7 +47,7 @@ RM_FileHandle& RM_FileHandle::operator= (const RM_FileHandle &fileHandle){
         this->isOpened = fileHandle.isOpened;
         this->ifHeaderModified = fileHandle.ifHeaderModified;
         this->pfh = fileHandle.pfh;
-        memcpy(&this->tableHeader, &fileHandle.tableHeader, sizeof(RM_FileHeader));
+        memcpy(&this->tableHeader, &fileHandle.tableHeader, sizeof(RM_FileHdr));
   }
   return (*this);
 }

@@ -62,23 +62,23 @@ RC PF_Manager::CreateFile (const char *fileName)
     // Initialize the file header: must reserve FileHdrSize bytes in memory
     // though the actual size of FileHdr is smaller
     // char hdrBuf[PF_PAGE_SIZE];
-    char hdrBuf[sizeof(PF_FileHdr)];
+    char hdrBuf[PF_FILE_HDR_SIZE];
 
     // So that Purify doesn't complain
-    memset(hdrBuf, 0, sizeof(PF_FileHdr));
+    memset(hdrBuf, 0, PF_FILE_HDR_SIZE);
 
     PF_FileHdr *hdr = (PF_FileHdr*)hdrBuf;
     hdr->firstFree = PF_PAGE_LIST_END;
     hdr->numPages = 0;
 
     // Write header to file
-//    // 从页的数据项开始写内容
-//    long offset = sizeof(PF_PageHdr);
+    // 从页的数据项开始写内容
+    // long offset = sizeof(PF_PageHdr);
     long offset = 0;
     if (lseek(fd, offset, L_SET) < 0)
         return (PF_UNIX);
-    if((numBytes = write(fd, hdrBuf, sizeof(PF_FileHdr)))
-       != sizeof(PF_FileHdr)) {
+    if((numBytes = write(fd, hdrBuf, PF_FILE_HDR_SIZE))
+       != PF_FILE_HDR_SIZE) {
 
         // Error while writing: close and remove file
         close(fd);
