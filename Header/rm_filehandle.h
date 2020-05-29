@@ -21,7 +21,7 @@
 typedef struct rm_PageHeader {
     PageNum nextFreePage;
     int numRecords;
-}RM_PageHeader;
+}RM_PageHdr;
 
 #define NO_MORE_FREE_PAGES -1
 
@@ -36,7 +36,7 @@ typedef struct rm_FileHeader {
 
     // 位图记录了记录在页中的存储情况，1表示有效记录，0表示无效记录
     int bitmapLen;            // 位图占用的字节数
-}RM_FileHeader;
+}RM_FileHdr;
 
 /**
  * @brief 数据表类，是表的抽象
@@ -66,7 +66,7 @@ public:
     RC ForcePages (PageNum pageNum = ALL_PAGES);                   // 必要时将页号为pageNum的页回写磁盘
 private:
     // 获得一个记录页pageHandle的页头
-    RM_PageHeader * GetPageHeader(const PF_PageHandle &pageHandle) const;
+    RM_PageHdr * GetPageHeader(const PF_PageHandle &pageHandle) const;
 
     // 获的一个记录页pageHandle的位图
     char * GetPageBitMap(const PF_PageHandle &pageHandle) const;
@@ -75,7 +75,7 @@ private:
     char * GetRecord(const PF_PageHandle &pageHandle, SlotNum slot) const;
 
     // 分配一个新页，调用关联的pfh的相关方法，返回这个新页的句柄
-    // 同时跟新一下必要的数据表头的信息。
+    // 同时更新一下必要的数据表头的信息。
     RC AllocateNewPage(PF_PageHandle &newPage);
 
     // 检查数据表头是否有效
@@ -85,7 +85,7 @@ private:
     int GetRecordSize() const;
 
     Boolean isOpened;                // 数据表被打开标识,从磁盘读取时，设置为TRUE,回写磁盘前设置为FALSE
-    RM_FileHeader tableHeader{};     // 数据表信息头，保存在与之相关连的文件头中
+    RM_FileHdr tableHeader{};        // 数据表信息头，保存在与之相关连的文件头中
     PF_FileHandle *pfh;              // 数据表对应的文件实例对象地址
     Boolean ifHeaderModified;        // header如果修改，回写时需要覆盖原来的文件头
 };
@@ -118,9 +118,9 @@ private:
 
     // 在所给页page中查找scanSlot的下一条记录，若达到文件尾，返回RM_EOF
     // 主要给GetNextRec调用
-    RC GetNextRecord(PF_PageHandle &page, RM_Record &nextRec);
+    RC GetNextRecord(PF_PageHandle page, RM_Record &nextRec);
 
-    Boolean openScan;                                   // 查询器实例是否有效
+    Boolean openScan;                                   // 查询迭代器是否打开
 
     // 查询器的参数，当执行OpenScan时，这些参数被确定
     RM_FileHandle* fileHandle;                          // 要查询的数据表的指针
@@ -135,7 +135,7 @@ private:
 
     PageNum scanPage;                                   // 页号
     SlotNum scanSlot;                                   // 当前指向记录的槽号
-    PF_PageHandle *currentPH;                           // 正在查询的页
+    PF_PageHandle currentPH;                            // 正在查询的页
 //    RM_Record currentRec;                               // 上面三项完全可以由这一项代替
 
     // Dictates whether to seek a record on the same page, or unpin it and

@@ -16,7 +16,7 @@
 RM_FileScan::RM_FileScan(){
     openScan = FALSE;               // openScan时才是true
     this->fileHandle = NULL;        // 查询器要查询的对象文件
-    this->currentPH = NULL;         // 当前正在查询的页
+//    this->currentPH = NULL;         // 当前正在查询的页
     this->scanPage = PF_INVALIDPAGE;// 当前查询的页号，也可由currentPH得到
     this->scanSlot = BEGIN_SCAN;    // 当前查询的记录所在的槽号
     this->attrLen = 0;
@@ -153,7 +153,7 @@ RC RM_FileScan::OpenScan (const RM_FileHandle &fileHandle,
 
     // 检查目标数据表是否有误
     if(fileHandle.isValidFileHeader())
-        this->fileHandle = const_cast<RM_FileHandle*>(&fileHandle);
+        this->fileHandle = const_cast<RM_FileHandle *>(&fileHandle);
     else
         return (RM_INVALIDFILE);
 
@@ -208,6 +208,8 @@ RC RM_FileScan::OpenScan (const RM_FileHandle &fileHandle,
 //    useNextPage = true;
     scanPage = 0;           // 从0号页开始查询
     scanSlot = BEGIN_SCAN;  // 槽号为-1开始
+    // 保存第0号页
+    this->fileHandle->pfh->GetThisPage(scanSlot,this->currentPH); // pin了一次
 //    numSeenOnPage = 0;
 //    hasPagePinned = false;
     return OK_RC;
@@ -220,8 +222,9 @@ RC RM_FileScan::OpenScan (const RM_FileHandle &fileHandle,
  */
 int RM_FileScan::GetNumRecOnPage(PF_PageHandle &page){
     // 得到页表头
-    RM_PageHeader *pageheader = this->fileHandle->GetPageHeader(page);
-    return pageheader->numRecords;
+    if(this->fileHandle == NULL)
+        return -1;
+    return (this->fileHandle->GetPageHeader(page))->numRecords;
 }
 
 /**
@@ -232,11 +235,9 @@ int RM_FileScan::GetNumRecOnPage(PF_PageHandle &page){
  * @return OK_RC          得到一条记录
  *         RM_ENDOFPAGE   到达当前文件尾
  */
-RC RM_FileScan::GetNextRecord(PF_PageHandle &page, RM_Record &nextRec) {
+RC RM_FileScan::GetNextRecord(PF_PageHandle page, RM_Record &nextRec) {
     RC rc = 0;
     // 解析page的data,得到所需要的部件
-    // 页头，记录了该页内的有效记录数和下一个空闲页的页号
-    RM_PageHeader *pageHeader = this->fileHandle->GetPageHeader(page);
     // 构造位图对象
     RM_BitMap bitMap = RM_BitMap(this->fileHandle->GetPageBitMap(page),
             this->fileHandle->tableHeader.numRecordsPerPage);
@@ -288,47 +289,45 @@ RC RM_FileScan::GetNextRec(RM_Record &rec) {
         return RM_INVALIDSCAN;
 
     RC rc;
-    PF_PageHandle page;     // 当前查询的页
-    // 首先得到要查询的页
-    if((rc = this->fileHandle->pfh->GetThisPage(scanPage,page)))
-        return rc;
     RM_Record nextRec;
     while (TRUE){
         // 调用GetNextRecord方法，得到下一条记录
-        if((rc = this->GetNextRecord(page,nextRec)) == RM_ENDOFPAGE){
+        if((rc = this->GetNextRecord(currentPH,nextRec)) == RM_ENDOFPAGE){  // 当前页到达该页的尾部
             // 当前页搜索完并没有找到下一条记录
             // unpin这个页，并将scanPage指向下一个页
             if((rc = fileHandle->pfh->UnpinPage(scanPage)))
                 return rc;
             // scanPage的下一页
-            if((rc = fileHandle->pfh->GetNextPage(scanPage,page)) == PF_EOF){
+            if((rc = fileHandle->pfh->GetNextPage(scanPage, this->currentPH)) == PF_EOF){
                 // 到达文件尾，该数据表检索完全
                 scanEnded = TRUE;
                 return RM_EOF;
-            }
-            scanPage = page.GetPageNum(); // 重置scanPage
-            scanSlot = BEGIN_SCAN;        // 重置scanSlot
-        } else{
-            // 找到下一条记录,更新scanPage和scanSlot
+            }else if(rc == OK_RC){
+                scanPage = this->currentPH.GetPageNum(); // 重置scanPage为下一页的页号
+                scanSlot = BEGIN_SCAN;                   // 重置scanSlot
+            }else
+                return rc;
+        } else if(rc == OK_RC){                         // 找到下一条记录,更新scanPage和scanSlot
             RID rid;
             nextRec.GetRid(rid);
             scanPage = rid.GetPageNum();
             scanSlot = rid.GetSlotNum();
-            // 判断这条记录是否符合查询条件，符合就返回这个记录并退出循环,否则继续循环
-            // 判断这条记录是否满足条件
-            char* pData; // 记录数据
-            nextRec.GetData(pData);
-            if(compOp != NO_OP){
-                bool satisfies = (* comparator)(pData + attrOffset, this->value, attrType, attrLen);
-                if(satisfies){
-                    rec = nextRec;
-                    break;
-                }
-            }
-            else{
+        } else
+            return rc;                              // 其他错误
+        // 判断这条记录是否符合查询条件，符合就返回这个记录并退出循环,否则继续循环
+        // 判断这条记录是否满足条件
+        char* pData; // 记录数据
+        nextRec.GetData(pData);
+        if(compOp != NO_OP){
+            bool satisfies = (* comparator)(pData + attrOffset, this->value, attrType, attrLen);
+            if(satisfies){
                 rec = nextRec;
                 break;
             }
+        }
+        else{
+            rec = nextRec;
+            break;
         }
         // 不满足条件继续查找下一条
     }

@@ -58,12 +58,12 @@ RM_FileHandle& RM_FileHandle::operator= (const RM_FileHandle &fileHandle){
  * @param pageHandle
  * @return 记录页头的地址
  */
-RM_PageHeader * RM_FileHandle::GetPageHeader(const PF_PageHandle &pageHandle) const {
+RM_PageHdr * RM_FileHandle::GetPageHeader(const PF_PageHandle &pageHandle) const {
     // 返回页的数据域的首地址即可
     char * pdata;
     RC rc;
     pageHandle.GetPageData(pdata);
-    return (RM_PageHeader *)pdata;
+    return (RM_PageHdr *)pdata;
 }
 
 /**
@@ -73,7 +73,7 @@ RM_PageHeader * RM_FileHandle::GetPageHeader(const PF_PageHandle &pageHandle) co
  */
 char * RM_FileHandle::GetPageBitMap(const PF_PageHandle &pageHandle) const {
     // 返回页的数据域之后的
-    return (char *)GetPageHeader(pageHandle) + sizeof(RM_PageHeader);
+    return (char *)GetPageHeader(pageHandle) + sizeof(RM_PageHdr);
 }
 
 /**
@@ -101,7 +101,7 @@ RC RM_FileHandle::AllocateNewPage(PF_PageHandle &newPage) {
         return (rc);
     }
     // 初始化这个新页，补充RM_PageHeader
-    RM_PageHeader *pageHeader = GetPageHeader(newPage);
+    RM_PageHdr *pageHeader = GetPageHeader(newPage);
     char * bitmap = GetPageBitMap(newPage);
     pageHeader->nextFreePage = tableHeader.firstFreePage;
     pageHeader->numRecords = 0;
@@ -200,8 +200,13 @@ RC RM_FileHandle::InsertRec (const char *pData, RID &rid) {
         // 没有可用的空闲页,申请一个新页
         if((rc = AllocateNewPage(page)))
             return rc;
-
         ifHeaderModified = TRUE;
+        // 修改页头数据
+        GetPageHeader(page)->nextFreePage = NO_MORE_FREE_PAGES;
+        GetPageHeader(page)->numRecords = 0;
+        // 修改数据表头
+        tableHeader.firstFreePage = page.GetPageNum();
+        tableHeader.numPages++;
     }else{
         // 取得这个空闲页
         if((rc = pfh->GetThisPage(tableHeader.firstFreePage,page)))
@@ -217,11 +222,16 @@ RC RM_FileHandle::InsertRec (const char *pData, RID &rid) {
     memcpy(bitMap.GetBitMap() + (tableHeader.bitmapLen) + slot * (tableHeader.recordSize),
            pData, tableHeader.recordSize);
     // 记录数加一
-    RM_PageHeader *pageHeader = GetPageHeader(page);
+    RM_PageHdr *pageHeader = GetPageHeader(page);
     pageHeader->numRecords++;
     // 修改位图
     if((rc = bitMap.SetBit(slot)))
         return rc;
+    // 判断插入记录后数据表页是否满，若满，需要将firstFreePage设置为下一页
+    if(pageHeader->numRecords >= tableHeader.numRecordsPerPage){
+        tableHeader.firstFreePage = pageHeader->nextFreePage;
+        ifHeaderModified = TRUE;
+    }
     // 标记脏页并unpin
     if((rc = pfh->MarkDirty(page.GetPageNum()) ) || (rc = pfh->UnpinPage(page.GetPageNum())))
         return rc;
@@ -267,7 +277,7 @@ RC RM_FileHandle::DeleteRec (const RID &rid) {
     // 对应位设置0,记录数减1
     bitMap.ResetBit(slotNum);
 
-    RM_PageHeader *pageHeader = GetPageHeader(page);
+    RM_PageHdr *pageHeader = GetPageHeader(page);
     pageHeader->numRecords--;
 
     // 如果该页从满页变成了空闲页，修改数据表头和页头nextFree字段
@@ -302,19 +312,24 @@ RC RM_FileHandle::UpdateRec (const RM_Record &newRec) {
     if(!rid.isValidRID())
         return RM_INVALIDRID;
 
-    // 获取旧记录
-    RM_Record oldRec;
-    GetRec(rid,oldRec);
 
     char *oldData,*newData;
-    oldRec.GetData(oldData);
+//    oldRec.GetData(oldData);
+    // oldData应该指向缓冲区
+    RC rc = OK_RC;
+    // 获取旧记录数据
+    PF_PageHandle page;
+    if((rc = pfh->GetThisPage(rid.GetPageNum(),page)))
+        return rc;
+    oldData = GetRecord(page,rid.GetSlotNum());
+
+    // 获取新记录数据
     newRec.GetData(newData);
 
     // 新记录覆盖旧记录
     memcpy(oldData, newData, tableHeader.recordSize);
 
     //标记脏页并unpin
-    RC rc = OK_RC;
     if((rc = pfh->MarkDirty(rid.GetPageNum())) || (rc = pfh->UnpinPage(rid.GetPageNum())))
         return rc;
     return rc;
@@ -345,7 +360,7 @@ Boolean RM_FileHandle::isValidFileHeader() const{
     if(tableHeader.recordSize <= 0 || tableHeader.numRecordsPerPage <=0 || tableHeader.numPages <= 0)
         return FALSE;
 
-    if((sizeof(RM_PageHeader) + tableHeader.bitmapLen + tableHeader.recordSize*tableHeader.numRecordsPerPage) >
+    if((sizeof(RM_PageHdr) + tableHeader.bitmapLen + tableHeader.recordSize*tableHeader.numRecordsPerPage) >
     PF_PAGE_SIZE){
         return FALSE;
     }

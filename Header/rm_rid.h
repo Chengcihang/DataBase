@@ -15,10 +15,6 @@
 #include "redbase.h"
 #include "../Header/pf.h"
 
-// PageNum类型保持和pf.h中的一致
-// 槽号，表示记录在页中的第几个位置
-//typedef int SlotNum;
-
 
 // rid由页号和槽号组成，标识了一条记录的位置，同时也是一条记录的唯一标识
 // RID类

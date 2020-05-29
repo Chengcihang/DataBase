@@ -40,11 +40,11 @@ RC RM_Manager::CreateFile (const char *fileName, int recordSize) {
 
     // 这里具体数值可能会出现问题
     // 每页的记录上限
-    int numRecordsPerPage = (int)((PF_PAGE_SIZE - sizeof(RM_PageHeader)) / (recordSize + 1.0 / 8));
+    int numRecordsPerPage = (int)((PF_PAGE_SIZE - sizeof(RM_PageHdr)) / (recordSize + 1.0 / 8));
     // bitMap占用的字节数
     int bitmapSize = (numRecordsPerPage + 1) / 8;
 
-    if( (PF_PAGE_SIZE - bitmapSize - sizeof(RM_PageHeader))/recordSize <= 0)
+    if( (PF_PAGE_SIZE - bitmapSize - sizeof(RM_PageHdr))/recordSize <= 0)
         return RM_BADRECORDSIZE;
 
 
@@ -57,7 +57,7 @@ RC RM_Manager::CreateFile (const char *fileName, int recordSize) {
     // 将file强制转换成PF_FileHandle类型
     PF_FileHandle pfFileHandle;
 
-    RM_FileHeader *header;
+    RM_FileHdr *header;
     // 打开这个文件，写入数据表头信息
     // OpenFile会从磁盘上将文件头页加载到缓冲区
     // 即得到了这个文件的信息
@@ -75,7 +75,7 @@ RC RM_Manager::CreateFile (const char *fileName, int recordSize) {
     fileHdrPage.GetPageData(hdrPage);
 
     // 从文件头之后的内容就是数据表头
-    header = (RM_FileHeader *) hdrPage;
+    header = (RM_FileHdr *) hdrPage;
     header->recordSize = recordSize;
     header->numRecordsPerPage = numRecordsPerPage;
     header->bitmapLen = bitmapSize;
@@ -112,14 +112,16 @@ RC RM_Manager::DestroyFile(const char *fileName) {
  * @param header     数据表头
  * @return
  */
-RC RM_Manager::SetUpFH(RM_FileHandle& fileHandle, PF_FileHandle &fh, RM_FileHeader* header){
+RC RM_Manager::SetUpFH(RM_FileHandle& fileHandle, PF_FileHandle &fh, RM_FileHdr* header){
     // 数据表的一些信息写入到数据表头
-    memcpy(&fileHandle.tableHeader, header, sizeof(RM_FileHeader));
+    memcpy(&fileHandle.tableHeader, header, sizeof(RM_FileHdr));
     // 数据表与文件关联起来
     fileHandle.pfh = &fh;
     // 因为修改了数据表头的信息，头信息修改位设置为TRUE
     fileHandle.ifHeaderModified = TRUE;
-    fileHandle.isOpened = TRUE;
+    // 文件头页被修改
+    fileHandle.pfh->SetHdrChanged();
+    // fileHandle.isOpened = TRUE;
 
     //  确认数据表头信息可用
     if(! fileHandle.isValidFileHeader()){
@@ -174,7 +176,7 @@ RC RM_Manager::OpenFile   (const char *fileName, RM_FileHandle &fileHandle){
     // 得到文件头页中数据表头的地址，
     char * hdrPage;
     fileHdrPage.GetPageData(hdrPage);
-    RM_FileHeader* hdr = (RM_FileHeader *)hdrPage;
+    RM_FileHdr* hdr = (RM_FileHdr *)hdrPage;
 
     // 关联
     SetUpFH(fileHandle, *pfFileHandle, hdr);
@@ -227,7 +229,7 @@ RC RM_Manager::CloseFile  (RM_FileHandle &fileHandle) {
         fileHdrPage.GetPageData(pPage);
 
         // 复制RM_FileHandle.RM_Hdr中的内容到PF_Hdr之后
-        memcpy(pPage, &fileHandle.tableHeader, sizeof(RM_FileHeader));
+        memcpy(pPage, &fileHandle.tableHeader, sizeof(RM_FileHdr));
         // 将缓冲区中的文件头页标记为脏页，并unpin
         if((rc = fileHandle.pfh->MarkDirty(PF_FILE_HDR_PAGENUM))
         || (rc = fileHandle.pfh->UnpinPage(PF_FILE_HDR_PAGENUM)))

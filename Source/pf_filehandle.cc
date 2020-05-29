@@ -110,7 +110,6 @@ RC PF_FileHandle::GetNextPage(PageNum current, PF_PageHandle &pageHandle) const
         if (rc != PF_INVALIDPAGE)
             return (rc);
     }
-
     // 没有下一页
     return (PF_EOF);
 }

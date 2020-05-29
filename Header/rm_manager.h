@@ -31,7 +31,7 @@ private:
     // 一张数据表读应了文件系统的一个文件，因此需要将两者关联起来
     // 打开一个文件的必要操作
     // 即将RM_FileHandle的pfh指向PF_FileHandle
-    RC SetUpFH(RM_FileHandle& fileHandle, PF_FileHandle &fh, RM_FileHeader* header);
+    RC SetUpFH(RM_FileHandle& fileHandle, PF_FileHandle &fh, RM_FileHdr* header);
 
     // 关闭一个数据表的必要操作，与SetUpFH对应
     RC CleanUpFH(RM_FileHandle &fileHandle);

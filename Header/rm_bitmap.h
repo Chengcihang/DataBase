@@ -31,7 +31,7 @@ public:
     int GetFirstZeroBit () const ;                              // 得到位图的第一个0位的槽号，查找插入
     int GetNextOneBit   (int start) const;                      // 从start位开始，得到下一个1的槽号，记录查询
 
-    static int CountToLen(int count);                            // 根据位数计算占用字节数
+    static int CountToLen(int count);                           // 根据位数计算占用字节数
 
 private:
     char* bitmap;   // 由于不知道位图具体用到多少位，所以用指针来表示
