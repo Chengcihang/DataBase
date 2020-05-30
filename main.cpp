@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Header/rm_manager.h"
+#include "RM/rm_manager.h"
 
 // 测试记录管理模块
 int main() {
