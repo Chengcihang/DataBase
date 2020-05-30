@@ -10,6 +10,8 @@
 #define SM_Scan_h
 
 #include "sm.h"
+#include "../RM/rm_record.h"
+#include "../RM/rm_filehandle.h"
 
 //属性迭代器
 class SM_Scan {

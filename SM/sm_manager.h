@@ -9,8 +9,11 @@
 #ifndef SM_Manager_h
 #define SM_Manager_h
 
+#include <map>
 #include "sm_catalog.h"
 #include "../RM/rm_manager.h"
+#include "../PARSER/parser.h"
+#include "printer.h"
 
 
 //数据管理

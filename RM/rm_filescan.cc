@@ -9,7 +9,7 @@
 #include "../PF/pf.h"
 #include "rm_filehandle.h"
 #include "rm_rid.h"
-#include <stdlib.h>
+#include <cstdlib>
 #include <cstring>
 
 
@@ -61,7 +61,7 @@ Boolean equal(void * value1, void * value2, AttrType attrtype, int attrLen){
         // 直接return,所以不需要break
         case FLOAT: return *(float *)value1 == *(float *)value2;
         case INT:   return *(int *)value1 == *(int *)value2;
-        case CHAR:  return (strncmp((char *) value1, (char *) value2, attrLen) == 0);
+        case STRING:  return (strncmp((char *) value1, (char *) value2, attrLen) == 0);
         case DATE: return *(long *)value1 == *(long *)value2;
         default:
             return FALSE;  // 类型错误时默认返回不等
@@ -73,7 +73,7 @@ Boolean less_than(void * value1, void * value2, AttrType attrtype, int attrLen){
     switch (attrtype) {
         case FLOAT: return *(float *)value1 < *(float *)value2;
         case INT:   return *(int *)value1 < *(int *)value2;
-        case CHAR:  return (strncmp((char *) value1, (char *) value2, attrLen) < 0);
+        case STRING:  return (strncmp((char *) value1, (char *) value2, attrLen) < 0);
         case DATE:  return *(long *)value1 < *(long *)value2;
         default:
             return FALSE;  // 类型错误时默认FALSE
@@ -85,7 +85,7 @@ Boolean greater_than(void * value1, void * value2, AttrType attrtype, int attrLe
     switch (attrtype) {
         case FLOAT: return *(float *)value1 > *(float *)value2;
         case INT:   return *(int *)value1 > *(int *)value2;
-        case CHAR:  return (strncmp((char *) value1, (char *) value2, attrLen) > 0);
+        case STRING:  return (strncmp((char *) value1, (char *) value2, attrLen) > 0);
         case DATE:  return *(long *)value1 > *(long *)value2;
         default:
             return FALSE;  // 类型错误时默认返回FALSE
@@ -97,7 +97,7 @@ Boolean less_than_or_eq_to(void * value1, void * value2, AttrType attrtype, int 
     switch (attrtype) {
         case FLOAT: return *(float *)value1 <= *(float *)value2;
         case INT:   return *(int *)value1 <= *(int *)value2;
-        case CHAR:  return (strncmp((char *) value1, (char *) value2, attrLen) <= 0);
+        case STRING:  return (strncmp((char *) value1, (char *) value2, attrLen) <= 0);
         case DATE:  return *(long *)value1 <= *(long *)value2;
         default:
             return FALSE;  // 类型错误时默认返回FALSE
@@ -109,7 +109,7 @@ Boolean greater_than_or_eq_to(void * value1, void * value2, AttrType attrtype, i
     switch (attrtype) {
         case FLOAT: return *(float *)value1 >= *(float *)value2;
         case INT:   return *(int *)value1 >= *(int *)value2;
-        case CHAR:  return (strncmp((char *) value1, (char *) value2, attrLen) >= 0);
+        case STRING:  return (strncmp((char *) value1, (char *) value2, attrLen) >= 0);
         case DATE:  return *(long *)value1 >= *(long *)value2;
         default:
             return FALSE;  // 类型错误时默认返回FALSE
@@ -121,7 +121,7 @@ Boolean not_equal(void * value1, void * value2, AttrType attrtype, int attrLen){
     switch (attrtype) {
         case FLOAT: return *(float *)value1 != *(float *)value2;
         case INT:   return *(int *)value1 != *(int *)value2;
-        case CHAR:  return (strncmp((char *) value1, (char *) value2, attrLen) != 0);
+        case STRING:  return (strncmp((char *) value1, (char *) value2, attrLen) != 0);
         case DATE:  return *(long *)value1 != *(long *)value2;
         default:
             return FALSE;  // 类型错误时默认返回FALSE
@@ -175,7 +175,7 @@ RC RM_FileScan::OpenScan (const RM_FileHandle &fileHandle,
 
     // 配置属性相关项
     if(compOp != NO_OP){ // 需要用到属性比较
-        if((attrOffset + attrLen) > recSize || attrOffset < 0 || attrOffset > MAXCHARLEN)
+        if((attrOffset + attrLen) > recSize || attrOffset < 0 || attrOffset > MAXSTRINGLEN)
             return (RM_INVALIDSCAN);
         this->attrOffset = attrOffset;
         this->attrLen = attrLen;
@@ -192,7 +192,7 @@ RC RM_FileScan::OpenScan (const RM_FileHandle &fileHandle,
             this->value = (void *) malloc(8);
             memcpy(this->value, value, 8);
 
-        }else if(attrType == CHAR){
+        }else if(attrType == STRING){
             // CHAR类型占attrLen字节
             this->value = (void *) malloc(attrLen);
             memcpy(this->value, value, attrLen);

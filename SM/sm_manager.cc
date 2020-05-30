@@ -22,9 +22,13 @@
 #include <set>
 #include <cfloat>
 
-#include "stddef.h"
+#include <cstddef>
 #include "statistics.h"
 #include "../RM/rm_manager.h"
+#include "sm_manager.h"
+#include "sm_printerror.h"
+#include "../PARSER/parser.h"
+#include "sm_scan.h"
 
 
 using namespace std;
@@ -668,9 +672,7 @@ bool SM_Manager::isValidAttrType(AttrInfo attribute){
         return true;
     if(type == FLOAT && length == 4)
         return true;
-    if(type == STRING && (length > 0) && length < MAXSTRINGLEN)
-        return true;
-    return false;
+    return type == STRING && (length > 0) && length < MAXSTRINGLEN;
 }
 
 /**
@@ -950,7 +952,7 @@ RC SM_Manager::Load(const char *relName,
     //检索与relcat中relName相关的记录和数据
     if((rc = GetRelEntry(relName, relRecord, relcatEntry)))
         return (rc);
-    if(relcatEntry->statsInitialized == false)
+    if(!relcatEntry->statsInitialized)
         calcStats = true;
 
     //创建一个包含有关属性信息的结构,帮助加载
@@ -1065,7 +1067,7 @@ RC SM_Manager::OpenAndLoadFile(RM_FileHandle &relFH,
         RID recRID;
         //遍历每个属性
         for(int i = 0; i < attrCount; i++){
-            if(line.size() == 0){
+            if(line.empty()){
                 free(record);
                 f.close();
                 return (SM_BADLOADFILE);

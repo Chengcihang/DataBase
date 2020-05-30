@@ -10,7 +10,11 @@
 #include <cstdio>
 #include <cerrno>
 #include <iostream>
+#include <cstring>
 #include "sm.h"
+#include "../redbase.h"
+#include "sm_printerror.h"
+#include "../PF/pf.h"
 
 using namespace std;
 

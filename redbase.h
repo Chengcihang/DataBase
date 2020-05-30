@@ -12,7 +12,8 @@
 //
 #define MAXNAME       24                // 属性名的最大长度
 
-#define MAXCHARLEN  255                 // char类型的最大长度
+//#define MAXCHARLEN  255                 // char类型的最大长度
+#define MAXSTRINGLEN 255
 
 #define MAXATTRS      40                // 属性个数最多40个，创建数据表的时候记录信息
 
@@ -59,9 +60,10 @@ const int ALL_PAGES = -2;
 // Attribute types
 //
 enum AttrType {
+    STRING,
     INT,            // 整型   4字节
     FLOAT,          // 浮点型  4字节
-    CHAR,           // 字符串，最长MAXCHARLEN个字符
+ //   CHAR,           // 字符串，最长MAXCHARLEN个字符
     DATE            // 日期型  8字节1997：04：24 // 年份乘以10000,加月份乘以100,加天
                     // long类型储存
 };

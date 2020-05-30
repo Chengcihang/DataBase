@@ -77,4 +77,4 @@ set(
 )
 
 
-add_executable(DataBase redbase.h main.cpp ${PF_MODULE} ${RM_MODULE} ${IX_MODELE} ${SM_MODULE} ${PARSER_MODULE})
+add_executable(DataBase redbase.h main.cpp ${PF_MODULE} ${RM_MODULE} ${IX_MODULE} ${SM_MODULE} ${PARSER_MODULE})

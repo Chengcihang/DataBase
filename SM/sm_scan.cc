@@ -6,8 +6,6 @@
 //  Copyright © 2020 社区风险项目. All rights reserved.
 //
 
-#include <cstdio>
-#include <iostream>
 #include "../RM/rm.h"
 #include "sm_catalog.h"
 #include "sm_scan.h"
@@ -36,7 +34,7 @@ RC SM_Scan::OpenScan(RM_FileHandle &fh,
     RC rc = 0;
     scanIsValid = true;
     //初始化一个文件扫描器
-    if((rc = fileScan.OpenScan(fh, CHAR, MAXNAME+1, 0, EQ_OP, relName)))
+    if((rc = fileScan.OpenScan(fh, STRING, MAXNAME+1, 0, EQ_OP, relName)))
         return (rc);
 
     return (0);
