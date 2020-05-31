@@ -1,5 +1,5 @@
 //
-//  PARSER.h
+//  Parser.h
 //  MicroDBMS
 //
 //  Created by 全俊源 on 2020/4/28.
@@ -12,7 +12,7 @@
 #include <cstdio>
 #include <iostream>
 #include "../redbase.h"
-#include "../pf/pf.h"
+#include "../PF/pf.h"
 
 //声明结构
 

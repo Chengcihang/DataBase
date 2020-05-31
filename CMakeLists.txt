@@ -67,14 +67,8 @@ set(
 
 set(
         PARSER_MODULE
-        PARSER/interp.cc
-        PARSER/nodes.cc
-        PARSER/parse.cc
         PARSER/parser.h
-        PARSER/parser_internal.h
-        PARSER/scanhelp.cc
-        PARSER/y.tab.h
 )
 
 
-add_executable(DataBase redbase.h main.cpp ${PF_MODULE} ${RM_MODULE} ${IX_MODULE} ${SM_MODULE} ${PARSER_MODULE})
+add_executable(DataBase redbase.h sm1.cpp ${PF_MODULE} ${RM_MODULE} ${IX_MODULE} ${SM_MODULE} ${PARSER_MODULE})

@@ -8,7 +8,7 @@
 
 #ifndef SM_PrintError_h
 #define SM_PrintError_h
-
+#include "../redbase.h"
 //打印错误功能
 void SM_PrintError(RC rc);
 

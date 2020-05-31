@@ -25,11 +25,11 @@
 #include <cstddef>
 #include "statistics.h"
 #include "../RM/rm_manager.h"
-#include "sm_manager.h"
-#include "sm_printerror.h"
-#include "../PARSER/parser.h"
-#include "sm_scan.h"
 
+#include "sys/stat.h"
+#include <dirent.h>
+#include "sm_manager.h"
+#include "sm_scan.h"
 
 using namespace std;
 
@@ -93,9 +93,117 @@ SM_Manager::SM_Manager(IX_Manager &ixm,
 SM_Manager::~SM_Manager() {}
 
 
-#pragma mark - 数据库操作 库
+#pragma mark - 数据库操作库
 /**
- 1. 打开对应于数据库的文件夹并进入该文件夹
+1. 创建数据库
+输入参数：数据库名称
+*/
+//创建数据库
+RC SM_Manager::CreateDb(const char *dbName) {
+    RC rc = OK_RC;
+    int status = mkdir(dbName, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    //创建成功
+    if (status == 0) {
+        printf("创建数据库%s成功 \n",dbName);
+    }
+    else {
+        printf("创建数据库%s失败 \n",dbName);
+        rc = 1;
+    }
+    
+    if (chdir(dbName) < 0) {
+        //无法进入数据库目录
+        printf("chdir error to %s \n", dbName);
+        rc = 1;
+    }
+    else {
+        //成功进入后，创建文件relcat和attrcat
+        if ((rc = rmManager.CreateFile ("relcat", 1000))) {
+            printf("创建数据库 %s 下relcat文件失败 \n", dbName);
+        }
+        
+        if ((rc = rmManager.CreateFile ("attrcat", 1000))) {
+            printf("创建数据库 %s 下attrcat文件失败 \n", dbName);
+        }
+    }
+    
+    if (chdir("..") < 0) {
+        //无法进入数据库目录
+        printf("无法返回上一级目录\n");
+        rc = 1;
+    }
+    return rc;
+}
+
+/**
+2. 销毁数据库
+输入参数：数据库名称
+*/
+//销毁数据库
+RC SM_Manager::DropDb(const char *dbName) {
+    //库名
+    std::string file_path = dbName;
+    
+    struct stat st;
+    if(lstat(file_path.c_str(),&st) == -1) {
+        printf("指定数据库%s信息有误 \n",dbName);
+        return -1;
+    }
+    
+    //是常规文件
+    if(S_ISREG(st.st_mode)) {
+        if(unlink(file_path.c_str()) == -1) {
+            printf("删除%s文件失败 \n",dbName);
+            return -1;
+        }
+    }
+    //是目录
+    else if(S_ISDIR(st.st_mode)) {
+        if(dbName == "." || dbName == "..") {
+            printf("数据库%s名称有误 \n",dbName);
+            return -1;
+        }
+        
+        //遍历删除指定数据库下的文件
+        DIR* dirp = opendir(file_path.c_str());
+        if(!dirp) {
+            return -1;
+        }
+        struct dirent *dir;
+        struct stat st;
+        //遍历
+        while((dir = readdir(dirp)) != NULL) {
+            if(strcmp(dir->d_name,".") == 0
+                    || strcmp(dir->d_name,"..") == 0)
+            {
+                continue;
+            }
+            std::string sub_path = file_path + '/' + dir->d_name;
+            if(lstat(sub_path.c_str(),&st) == -1) {
+                continue;
+            }
+            // 如果是普通文件，则unlink
+            if(S_ISREG(st.st_mode)) {
+                unlink(sub_path.c_str());
+            }
+            else {
+                printf("数据库%s下包含非法文件，无法删除 \n",dbName);
+                continue;
+            }
+        }
+        //删除目录（需要空）
+        if(rmdir(file_path.c_str()) == -1) {
+            closedir(dirp);
+            printf("删除数据库%s失败 \n",dbName);
+            return -1;
+        }
+        closedir(dirp);
+    }
+    return 0;
+}
+
+/**
+ 3. 打开对应于数据库的文件夹并进入该文件夹
  输入参数：数据库名称
  */
 RC SM_Manager::OpenDb(const char *dbName) {
@@ -113,7 +221,7 @@ RC SM_Manager::OpenDb(const char *dbName) {
     }
 
     //打开并保存relcat文件句柄
-    if((rc = rmManager.OpenFile("relcat", relcatFH) )){
+    if((rc = rmManager.OpenFile("relcat", relcatFH))){
         return (SM_INVALIDDB);
     }
     //打开并保存attrcat文件句柄
@@ -125,7 +233,7 @@ RC SM_Manager::OpenDb(const char *dbName) {
 }
 
 /**
- 2. 关闭数据库，因此关闭任何打开文件
+ 4. 关闭数据库，因此关闭任何打开文件
  输入参数：无
 */
 RC SM_Manager::CloseDb() {
@@ -137,6 +245,11 @@ RC SM_Manager::CloseDb() {
     //关闭attrcat文件
     if((rc = rmManager.CloseFile(attrcatFH))){
         return (rc);
+    }
+    if (chdir("..") < 0) {
+        //无法进入数据库目录
+        printf("无法返回上一级目录\n");
+        rc = 1;
     }
     //正常关闭返回0
     return (0);
@@ -672,7 +785,9 @@ bool SM_Manager::isValidAttrType(AttrInfo attribute){
         return true;
     if(type == FLOAT && length == 4)
         return true;
-    return type == STRING && (length > 0) && length < MAXSTRINGLEN;
+    if(type == STRING && (length > 0) && length < MAXSTRINGLEN)
+        return true;
+    return false;
 }
 
 /**
@@ -952,7 +1067,7 @@ RC SM_Manager::Load(const char *relName,
     //检索与relcat中relName相关的记录和数据
     if((rc = GetRelEntry(relName, relRecord, relcatEntry)))
         return (rc);
-    if(!relcatEntry->statsInitialized)
+    if(relcatEntry->statsInitialized == false)
         calcStats = true;
 
     //创建一个包含有关属性信息的结构,帮助加载
@@ -1067,7 +1182,7 @@ RC SM_Manager::OpenAndLoadFile(RM_FileHandle &relFH,
         RID recRID;
         //遍历每个属性
         for(int i = 0; i < attrCount; i++){
-            if(line.empty()){
+            if(line.size() == 0){
                 free(record);
                 f.close();
                 return (SM_BADLOADFILE);
@@ -1081,7 +1196,7 @@ RC SM_Manager::OpenAndLoadFile(RM_FileHandle &relFH,
             line.erase(0, pos + delimiter.length());
 
             //解析属性值，然后将其插入右侧的插槽中
-            //如果解析不正确，则recInsert应该返回false
+            //如果解析不正确，则recInsert应该返回false
             if(attributes[i].recInsert(record + attributes[i].offset, token, attributes[i].length) == false){
                 rc = SM_BADLOADFILE;
                 free(record);

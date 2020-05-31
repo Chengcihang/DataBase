@@ -16,13 +16,11 @@
 //#include "../RM/rm.h"
 //#include "printer.h"
 //#include "../RM/rm_rid.h"
-//#include <map>
-//#include <string>
-//#include <set>
-//#include "sm_manager.h"
-//#include "sm_scan.h"
-//#include "sm_catalog.h"
-//#include "sm_printerror.h"
+#include <map>
+#include <set>
+#include "sm_manager.h"
+#include "sm_scan.h"
+#include "sm_printerror.h"
 
 #define MAX_DB_NAME 255
 

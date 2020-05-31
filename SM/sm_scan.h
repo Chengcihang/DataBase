@@ -9,7 +9,7 @@
 #ifndef SM_Scan_h
 #define SM_Scan_h
 
-#include "sm.h"
+//#include "sm.h"
 #include "../RM/rm_record.h"
 #include "../RM/rm_filehandle.h"
 

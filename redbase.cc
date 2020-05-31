@@ -10,9 +10,11 @@
 #include <cstring>
 #include <unistd.h>
 #include "redbase.h"
-#include "rm/rm.h"
+#include "RM/rm.h"
 #include "SM/sm.h"
 #include "QL/ql.h"
+#include "RM/rm_manager.h"
+#include "SM/sm_manager.h"
 
 using namespace std;
 

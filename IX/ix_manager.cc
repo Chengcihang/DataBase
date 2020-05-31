@@ -219,12 +219,14 @@ RC IX_Manager::OpenIndex (const char *fileName,
 //      pfManager.CloseFile(fileHandle);
 //      return (rc);
 //    }
+    firstpage = pageHandle.GetPageNum();
     if((rc = fileHandle.GetFileHdrPage(pageHandle)) || (pageHandle.GetPageData(pData))){
-        firstpage = pageHandle.GetPageNum();
         fileHandle.UnpinPage(firstpage);
         pfManager.CloseFile(fileHandle);
         return (rc);
     }
+
+
     
     //设置indexHandle的属性
     struct IndexHeader * header = (struct IndexHeader *) pData;
@@ -336,7 +338,7 @@ bool IX_Manager::indexIsValid(AttrType attrType,
         return true;
 //    else if(attrType == STRING && attrLength > 0 && attrLength <= MAXSTRINGLEN)
 //        return true;
-    else if(attrType == CHAR && attrLength > 0 && attrLength <= MAXCHARLEN)
+    else if(attrType == STRING && attrLength > 0 && attrLength <= MAXSTRINGLEN)
         return true;
     else
         return false;

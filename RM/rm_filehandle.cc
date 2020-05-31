@@ -73,7 +73,9 @@ RM_PageHdr * RM_FileHandle::GetPageHeader(const PF_PageHandle &pageHandle) const
  */
 char * RM_FileHandle::GetPageBitMap(const PF_PageHandle &pageHandle) const {
     // 返回页的数据域之后的
-    return (char *)GetPageHeader(pageHandle) + sizeof(RM_PageHdr);
+    char *p = NULL;
+    p = ((char *)GetPageHeader(pageHandle)) + sizeof(RM_PageHdr);
+    return p;
 }
 
 /**

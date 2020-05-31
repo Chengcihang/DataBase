@@ -142,13 +142,19 @@ RC PF_Manager::OpenFile (const char *fileName, PF_FileHandle &fileHandle)
         return (PF_UNIX);
 
 
+//    // 将文件头页加载进内存
+//    char *hdrFile = (char*)fileHandle.hdr;           // hdrFile == fileHandle.hdr
+//    if((rc =  pBufferMgr->GetPage(fileHandle.unixfd,PF_FILE_HDR_PAGENUM,&hdrFile))){
+//        goto err;
+//    }
     // 将文件头页加载进内存
-    char *hdrFile = (char*)fileHandle.hdr;           // hdrFile == fileHandle.hdr
+    char *hdrFile = NULL;
     if((rc =  pBufferMgr->GetPage(fileHandle.unixfd,PF_FILE_HDR_PAGENUM,&hdrFile))){
         goto err;
     }
     // 上面的代码执行之后，hdr将指向缓冲区中的地址
     // fileHandle.hdr将指向缓冲区
+    fileHandle.hdr = (PF_FileHdr *)hdrFile;
 
     // Set file header to be not changed
     fileHandle.bHdrChanged = FALSE;

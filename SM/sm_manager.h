@@ -10,11 +10,11 @@
 #define SM_Manager_h
 
 #include <map>
+#include <set>
 #include "sm_catalog.h"
 #include "../RM/rm_manager.h"
-#include "../PARSER/parser.h"
 #include "printer.h"
-
+#include "../PARSER/parser.h"
 
 //数据管理
 class SM_Manager {
@@ -33,6 +33,10 @@ public:
     //析构函数
     ~SM_Manager();
 
+    //创建数据库
+    RC CreateDb(const char *dbName);
+    //销毁数据库
+    RC DropDb(const char *dbName);
     //打开数据库
     RC OpenDb(const char *dbName);
     //关闭数据库
@@ -66,13 +70,6 @@ public:
     //将指定参数设置为给定值
     RC Set(const char *paramName,
            const char *value);
-    
-    //打开并加载文件
-    RC OpenAndLoadFile(RM_FileHandle &relFH,
-                       const char *fileName,
-                       Attr* attributes,
-                       int attrCount,
-                       int recLength);
     
 private:
     //是否打印索引
@@ -143,7 +140,7 @@ private:
                   std::map<std::string,
                   int> &relToInt);
 
-    //打开文件并加载
+    //打开并加载文件
     RC OpenAndLoadFile(RM_FileHandle &relFH,
                        const char *fileName,
                        Attr* attributes,

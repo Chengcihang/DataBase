@@ -162,7 +162,7 @@ RC RM_BitMap::SetBitMapCount(int count) {
  * @param bitmapCount
  */
 RM_BitMap::RM_BitMap(char *_bitmap, int bitmapCount) {
-    this->bitmap = bitmap;
+    this->bitmap = _bitmap;
     this->bitCount = bitmapCount;
     this->bitmapLen = CountToLen(this->bitCount);
 }
