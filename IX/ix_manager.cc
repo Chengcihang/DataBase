@@ -96,7 +96,10 @@ RC IX_Manager::CreateIndex (const char *fileName,
 //      || (rc = fileHandle.AllocatePage(pageHandleRoot)) || (rc = pageHandleRoot.GetPageNum(rootpage))){
 //      return (rc);
 //    }
-    if((rc = fileHandle.AllocatePage(pageHeader)) || (rc = fileHandle.AllocatePage(pageHandleRoot)) ){
+//    if((rc = fileHandle.AllocatePage(pageHeader)) || (rc = fileHandle.AllocatePage(pageHandleRoot)) ){
+//      return (rc);
+//    }
+    if((rc = fileHandle.GetFileHdrPage(pageHeader)) || (rc = fileHandle.AllocatePage(pageHandleRoot)) ){
       return (rc);
     }
     headerpage = pageHeader.GetPageNum();
