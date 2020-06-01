@@ -37,7 +37,7 @@ const int STAT_BASE = 9000;
 
 
 //链接列表的模板类
-#include "linkedlist.h"
+#include "SM/linkedlist.h"
 
 
 //统计信息可以执行的不同操作的定义

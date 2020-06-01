@@ -10,8 +10,8 @@
 #ifdef PF_STATS
 
 #include <iostream>
-#include "pf.h"
-#include "statistics.h"
+#include "../PF/pf.h"
+#include "../statistics.h"
 
 using namespace std;
 

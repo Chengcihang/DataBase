@@ -23,7 +23,7 @@
 #include <cfloat>
 
 #include <cstddef>
-#include "statistics.h"
+#include "../statistics.h"
 #include "../RM/rm_manager.h"
 
 #include "sys/stat.h"

@@ -13,6 +13,8 @@
 #include <iostream>
 #include "../redbase.h"
 #include "../PF/pf.h"
+//#include "../QL/ql.h"
+//#include "../SM/sm_manager.h"
 
 //声明结构
 
@@ -27,7 +29,7 @@ struct AttrInfo{
 };
 
 
-//属性信息
+//关系信息
 struct RelAttr{
     //关系名称
     char *relName;
@@ -74,7 +76,6 @@ std::ostream &operator<<(std::ostream &s, const AttrType &at);
 //解析函数
 class QL_Manager;
 class SM_Manager;
-
 void RBparse(PF_Manager &pfm, SM_Manager &smm, QL_Manager &qlm);
 
 //错误打印功能

@@ -12,7 +12,7 @@ using namespace std;
 // The switch PF_STATS indicates that the user wishes to have statistics
 // tracked for the PF layer
 #ifdef PF_STATS
-#include "statistics.h"   // For StatisticsMgr interface
+#include "../statistics.h"   // For StatisticsMgr interface
 
 // Global variable for the statistics manager
 StatisticsMgr *pStatisticsMgr;

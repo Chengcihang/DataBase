@@ -11,7 +11,6 @@
 #include <unistd.h>
 #include "redbase.h"
 #include "RM/rm.h"
-#include "SM/sm.h"
 #include "QL/ql.h"
 #include "RM/rm_manager.h"
 #include "SM/sm_manager.h"
@@ -41,7 +40,7 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    // Opens up the database folder    
+    // 打开数据库
     dbname = argv[1];
     if ((rc = smm.OpenDb(dbname))) {
         PrintError(rc);
@@ -51,7 +50,7 @@ int main(int argc, char *argv[])
 
     RBparse(pfm, smm, qlm);
 
-    // Closes the database folder
+    // 关闭数据库
     if ((rc = smm.CloseDb())) {
         PrintError(rc);
         return (1);

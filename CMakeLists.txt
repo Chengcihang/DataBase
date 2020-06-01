@@ -59,8 +59,6 @@ set(
         SM/sm_printerror.h
         SM/sm_scan.cc
         SM/sm_scan.h
-        SM/statistics.cc
-        SM/statistics.h
         SM/printer.h
         SM/printer.cc
 )
@@ -68,7 +66,42 @@ set(
 set(
         PARSER_MODULE
         PARSER/parser.h
+        PARSER/y.tab.h
+        PARSER/y.tab.cc
+        PARSER/parser_internal.h
+        PARSER/interp.cc
+        PARSER/nodes.cc
+        PARSER/lex.yy.cc
+#        PARSER/scanhelp.cc
+)
+
+set(
+        QL_MODULE
+        QL/node_comps.h
+        QL/ql.h
+        QL/ql_error.cc
+        QL/ql_node.h
+        QL/ql_node.cc
+        QL/ql_nodejoin.cc
+        QL/ql_noderel.cc
+        QL/ql_nodesel.cc
+        QL/ql_nodeproj.cc
+        QL/ql_manager.cc
+)
+
+set(
+        QO_MODULE
+        QO/qo.h
+        QO/qo_manager.cc
+)
+
+set(
+        GLOBAL_MODULE
+        redbase.h
+        statistics.cc
+        statistics.h
+        redbase.cc
 )
 
 
-add_executable(DataBase redbase.h sm.cpp ${PF_MODULE} ${RM_MODULE} ${IX_MODULE} ${SM_MODULE} ${PARSER_MODULE})
+add_executable(DataBase ${GLOBAL_MODULE} ${PF_MODULE} ${RM_MODULE} ${IX_MODULE} ${SM_MODULE} ${PARSER_MODULE} ${QL_MODULE} ${QO_MODULE})
