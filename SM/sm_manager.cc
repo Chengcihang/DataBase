@@ -110,23 +110,25 @@ RC SM_Manager::CreateDb(const char *dbName) {
         printf("创建数据库%s失败 \n",dbName);
         rc = 1;
     }
-    
+
     if (chdir(dbName) < 0) {
         //无法进入数据库目录
         printf("chdir error to %s \n", dbName);
         rc = 1;
     }
     else {
+        int relCatRecSize = sizeof(RelCatEntry);
+        int attrCatRecSize = sizeof(AttrCatEntry);
         //成功进入后，创建文件relcat和attrcat
-        if ((rc = rmManager.CreateFile ("relcat", 1000))) {
+        if ((rc = rmManager.CreateFile ("relcat", relCatRecSize))) {
             printf("创建数据库 %s 下relcat文件失败 \n", dbName);
         }
-        
-        if ((rc = rmManager.CreateFile ("attrcat", 1000))) {
+
+        if ((rc = rmManager.CreateFile ("attrcat", attrCatRecSize))) {
             printf("创建数据库 %s 下attrcat文件失败 \n", dbName);
         }
     }
-    
+
     if (chdir("..") < 0) {
         //无法进入数据库目录
         printf("无法返回上一级目录\n");
@@ -134,6 +136,41 @@ RC SM_Manager::CreateDb(const char *dbName) {
     }
     return rc;
 }
+//RC SM_Manager::CreateDb(const char *dbName) {
+//    RC rc = OK_RC;
+//    int status = mkdir(dbName, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+//    //创建成功
+//    if (status == 0) {
+//        printf("创建数据库%s成功 \n",dbName);
+//    }
+//    else {
+//        printf("创建数据库%s失败 \n",dbName);
+//        rc = 1;
+//    }
+//
+//    if (chdir(dbName) < 0) {
+//        //无法进入数据库目录
+//        printf("chdir error to %s \n", dbName);
+//        rc = 1;
+//    }
+//    else {
+//        //成功进入后，创建文件relcat和attrcat
+//        if ((rc = rmManager.CreateFile ("relcat", 1000))) {
+//            printf("创建数据库 %s 下relcat文件失败 \n", dbName);
+//        }
+//
+//        if ((rc = rmManager.CreateFile ("attrcat", 1000))) {
+//            printf("创建数据库 %s 下attrcat文件失败 \n", dbName);
+//        }
+//    }
+//
+//    if (chdir("..") < 0) {
+//        //无法进入数据库目录
+//        printf("无法返回上一级目录\n");
+//        rc = 1;
+//    }
+//    return rc;
+//}
 
 /**
 2. 销毁数据库
@@ -386,8 +423,11 @@ RC SM_Manager::DropTable(const char *relName) {
         }
         //删除该属性记录
         RID attrRID;
+//        if((rc = attrRecord.GetRid(attrRID)) || (rc = attrcatFH.DeleteRec(attrRID)))
+//            return (rc);
         if((rc = attrRecord.GetRid(attrRID)) || (rc = attrcatFH.DeleteRec(attrRID)))
             return (rc);
+
     }
     //关闭扫描器
     if((rc = attrScan.CloseScan()))

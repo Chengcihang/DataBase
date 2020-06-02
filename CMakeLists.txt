@@ -73,6 +73,7 @@ set(
         PARSER/nodes.cc
         PARSER/lex.yy.cc
 #        PARSER/scanhelp.cc
+#        PARSER/scan.cc
 )
 
 set(
@@ -100,7 +101,9 @@ set(
         redbase.h
         statistics.cc
         statistics.h
-        redbase.cc
+        sm1.cpp
+#        redbase.cc
+#        dbcreate.cc
 )
 
 

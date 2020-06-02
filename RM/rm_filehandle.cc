@@ -253,17 +253,18 @@ RC RM_FileHandle::InsertRec (const char *pData, RID &rid) {
  * @return
  */
 RC RM_FileHandle::DeleteRec (const RID &rid) {
+    RC rc;
     // 检查
     if(!this->isOpened)
         return RM_INVALIDFILE;
-    if(!rid.isValidRID())
+    if((rc = rid.isValidRID()) != OK_RC)
         return RM_INVALIDRID;
     // 取得页号和槽号
     PageNum pageNum = rid.GetPageNum();
     SlotNum slotNum = rid.GetSlotNum();
 
     //取得页
-    RC rc = OK_RC;
+    rc = OK_RC;
     PF_PageHandle page;
     if((rc = pfh->GetThisPage(pageNum,page)))
         return rc;

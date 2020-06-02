@@ -118,7 +118,7 @@ private:
 
     // 在所给页page中查找scanSlot的下一条记录，若达到文件尾，返回RM_EOF
     // 主要给GetNextRec调用
-    RC GetNextRecord(PF_PageHandle page, RM_Record &nextRec);
+    RC GetNextRecord(PF_PageHandle &page, RM_Record &nextRec);
 
     Boolean openScan;                                   // 查询迭代器是否打开
 

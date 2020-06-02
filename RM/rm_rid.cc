@@ -49,14 +49,14 @@ SlotNum RID::GetSlotNum() const {
 
 // 检查此RID是否有效
 RC RID::isValidRID() const{
-    if(pageNum > 0 && slotNum >= 0)
+    if(pageNum >= 0 && slotNum >= 0)
         return OK_RC;
     else
         return RM_INVALIDRID;
 }
 
 RC RID::SetPageNum(PageNum _pageNum) {
-    if(_pageNum > 0 || _pageNum == INVALID_PAGE){
+    if(_pageNum >= 0 || _pageNum == INVALID_PAGE){
         this->pageNum = _pageNum;
         return OK_RC;
     }

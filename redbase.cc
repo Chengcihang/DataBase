@@ -29,24 +29,24 @@ QL_Manager qlm(smm, ixm, rmm);
 //
 int main(int argc, char *argv[])
 {
-    char *dbname;
+    char const *dbname = "testDB";
     RC rc;
-
     // Look for 2 arguments.  The first is always the name of the program
     // that was executed, and the second should be the name of the
     // database.
-    if (argc != 2) {
-        cerr << "Usage: " << argv[0] << " dbname \n";
-        exit(1);
-    }
+//    if (argc != 2) {
+//        cerr << "Usage: " << argv[0] << " dbname \n";
+//        exit(1);
+//    }
 
     // 打开数据库
-    dbname = argv[1];
     if ((rc = smm.OpenDb(dbname))) {
         PrintError(rc);
         return (1);
+    } else{
+        printf("打开数据库：%s\n",dbname);
     }
-    
+
 
     RBparse(pfm, smm, qlm);
 
@@ -54,8 +54,10 @@ int main(int argc, char *argv[])
     if ((rc = smm.CloseDb())) {
         PrintError(rc);
         return (1);
+    }else{
+        printf("关闭数据库：%s\n",dbname);
     }
-    
+
 
     cout << "Bye.\n";
 }

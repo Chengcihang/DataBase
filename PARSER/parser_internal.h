@@ -20,7 +20,7 @@ typedef float real;
 /*
  * the prompt 命令行提示词
  */
-#define PROMPT	"\nREDBASE >> "
+#define PROMPT	"\nMICROBASE >> "
 
 /*
  * REL_ATTR: describes a qualified attribute (relName.attrName)

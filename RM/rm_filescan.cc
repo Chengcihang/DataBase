@@ -209,7 +209,7 @@ RC RM_FileScan::OpenScan (const RM_FileHandle &fileHandle,
     scanPage = 0;           // 从0号页开始查询
     scanSlot = BEGIN_SCAN;  // 槽号为-1开始
     // 保存第0号页
-    this->fileHandle->pfh->GetThisPage(scanSlot,this->currentPH); // pin了一次
+    this->fileHandle->pfh->GetThisPage(scanPage,this->currentPH); // pin了一次
 //    numSeenOnPage = 0;
 //    hasPagePinned = false;
     return OK_RC;
@@ -235,7 +235,7 @@ int RM_FileScan::GetNumRecOnPage(PF_PageHandle &page){
  * @return OK_RC          得到一条记录
  *         RM_ENDOFPAGE   到达当前文件尾
  */
-RC RM_FileScan::GetNextRecord(PF_PageHandle page, RM_Record &nextRec) {
+RC RM_FileScan::GetNextRecord(PF_PageHandle &page, RM_Record &nextRec) {
     RC rc = 0;
     // 解析page的data,得到所需要的部件
     // 构造位图对象
@@ -243,7 +243,7 @@ RC RM_FileScan::GetNextRecord(PF_PageHandle page, RM_Record &nextRec) {
             this->fileHandle->tableHeader.numRecordsPerPage);
 
     // 根据slotScan，查找下一个有效的槽
-    SlotNum nextSlot = bitMap.GetNextOneBit(this->scanSlot);
+    SlotNum nextSlot = bitMap.GetNextOneBit(this->scanSlot+1);
 
     if(nextSlot < 0){
         // 该页无法再找到下一个1的槽位，返回到达文件尾
@@ -251,9 +251,9 @@ RC RM_FileScan::GetNextRecord(PF_PageHandle page, RM_Record &nextRec) {
     }else{
         // 找到可用的槽位，构建nextRec并返回
         RID rid(page.GetPageNum(),nextSlot);
-        nextRec.SetRecord(rid,
-                this->fileHandle->GetRecord(page,nextSlot),
-                this->fileHandle->GetRecordSize());
+//        nextRec.SetRecord(rid,
+//                this->fileHandle->GetRecord(page,nextSlot),
+//                this->fileHandle->GetRecordSize());
         if((rc = nextRec.SetRecord(rid,
                                    this->fileHandle->GetRecord(page,nextSlot),
                                    this->fileHandle->GetRecordSize())))
