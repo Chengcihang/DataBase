@@ -123,7 +123,7 @@ RC interp(NODE *n)
                n->u.LOAD.filename);
          break;
 
-      case N_SET:                    /* for Set() */
+      case N_SET:               /* for Set() */
 
          errval = pSmm->Set(n->u.SET.paramName,
                n->u.SET.string);

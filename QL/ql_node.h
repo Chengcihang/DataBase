@@ -7,20 +7,23 @@
 #define QL_NODE_H
 
 
+#include "../RM/rm_record.h"
+#include "../SM/sm_catalog.h"
+#include "../RM/rm_filehandle.h"
+
 /**
  * This holds information about a condition to meet
  * 用于保存条件信息
  */
 typedef struct Cond{
-  int offset1; // 左属性偏移量 offset of LHS attribute
-  // comparator - depends on which operator is used in this condition
-  bool (*comparator) (void * , void *, AttrType, int); 
-  bool isValue; // 是否是常量 whether this is a value or not
-  void* data; // 指向数据的指针 the pointer to the data
-  int offset2; // 右属性偏移量 the offset of RHS attribute
-  int length; // 左属性长度 length of LHS attribute
-  int length2; // 右属性长度 length of RHS value/attribute
-  AttrType type; // 属性类别 attribute type
+  int offset1; // 左属性偏移量
+  bool (*comparator) (void * , void *, AttrType, int); //比较器
+  bool isValue; // 是否是常量
+  void* data; // 指向数据的指针
+  int offset2; // 右属性偏移量
+  int length; // 左属性长度
+  int length2; // 右属性长度
+  AttrType type; // 属性类别
 } Cond;
 
 /**

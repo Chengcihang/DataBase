@@ -1,13 +1,8 @@
-// 
-// File:          ql_nodeproj.cc
-// Description:   Abstract class for query processing nodes
-// Author:        Yifei Huang (yifei@stanford.edu)
-//
-
 #include <iostream>
-#include <unistd.h>
 #include "../redbase.h"
+#include "../SM/sm.h"
 #include "ql.h"
+#include "../IX/ix.h"
 #include <string>
 #include "ql_node.h"
 
@@ -15,7 +10,6 @@
 using namespace std;
 
 /**
- * Create the project node with a reference to the previous node
  * 构造函数
  */
 QL_NodeProj::QL_NodeProj(QL_Manager &qlm, QL_Node &prevNode) : QL_Node(qlm), prevNode(prevNode) {
@@ -26,7 +20,6 @@ QL_NodeProj::QL_NodeProj(QL_Manager &qlm, QL_Node &prevNode) : QL_Node(qlm), pre
 }
 
 /**
- * Free memory allocated to this node
  * 析构函数
  */
 QL_NodeProj::~QL_NodeProj(){
@@ -37,20 +30,17 @@ QL_NodeProj::~QL_NodeProj(){
     listsInitialized = false;
 }
 
-/*
- * Set up the node by giving it the number of attributes to keep.
- * It allocates the memory to keep the list of indices referring to
- * attributes to keep
+/**
+ * 初始化节点 分配空间
  */
 RC QL_NodeProj::SetUpNode(int numAttrToKeep){
     RC rc = 0;
-    // malloc the list of attributes to keep
+    // 分配属性列表空间
     attrsInRec = (int *)malloc(numAttrToKeep * sizeof(int));
     memset((void*)attrsInRec, 0, sizeof(attrsInRec));
     int attrsInRecSize = 0;
 
-    // malloc the buffer to keep the data for a tuple passed
-    // up from the previous node
+    // 为缓存分配空间
     int bufLength;
     prevNode.GetTupleLength(bufLength);
     buffer = (char *)malloc(bufLength);
@@ -61,42 +51,39 @@ RC QL_NodeProj::SetUpNode(int numAttrToKeep){
 }
 
 /**
- * Open the iterator by opening the previous node
  * 打开迭代器
  */
 RC QL_NodeProj::OpenIt(){
     RC rc = 0;
     if((rc = prevNode.OpenIt()))
-      return (rc);
+        return (rc);
     return (0);
 }
 
-/*
- * Get the Data from the previous node, and reconstruct it
+/**
+ * 从上一个节点获取数据，并重建（递归调用后所有节点的数据都存在data所指向的空间中）
  */
 RC QL_NodeProj::GetNext(char *data){
     RC rc = 0;
     if((rc = prevNode.GetNext(buffer)))
-      return (rc);
+        return (rc);
 
     ReconstructRec(data);
     return (0);
 }
 
 /**
- * Close the iterator
  * 关闭迭代器
  */
 RC QL_NodeProj::CloseIt(){
     RC rc = 0;
     if((rc = prevNode.CloseIt()))
-      return (rc);
+        return (rc);
     return (0);
 }
 
 /**
- * Add a projection attribute to the list of attributes to keep
- * 向属性列表添加一个投影属性，参数是属性下标
+ * 向该节点的属性列表添加一个待投影属性，参数是属性下标
  */
 RC QL_NodeProj::AddProj(int attrIndex){
     RC rc = 0;
@@ -107,16 +94,15 @@ RC QL_NodeProj::AddProj(int attrIndex){
     return (0);
 }
 
-/*
- * Given data from the previous node store in buffer, it reconstructs it
- * by retrieving only the attributes to keep, and storing the
- * new data in the pointer passed in
+/**
+ * 重建节点，只保留上一个节点的属性列表，将属性列表数据存储在参数data所指的内存空间中
  */
 RC QL_NodeProj::ReconstructRec(char *data){
     RC rc = 0;
     int currIdx = 0;
-    int *attrsInPrevNode;
-    int numAttrsInPrevNode;
+    int *attrsInPrevNode;   // 上一个节点的属性列表
+    int numAttrsInPrevNode; // 上一个节点属性个数
+    // 获取上一个节点的属性列表和属性个数
     if((rc = prevNode.GetAttrList(attrsInPrevNode, numAttrsInPrevNode)))
         return (rc);
 
@@ -129,19 +115,16 @@ RC QL_NodeProj::ReconstructRec(char *data){
             int prevNodeIdx = attrsInPrevNode[j];
             bufIdx += qlm.attrEntries[prevNodeIdx].attrLength;
         }
-        // get offset of index j
         int attrIdx = attrsInRec[i];
         memcpy(data + currIdx, buffer + bufIdx, qlm.attrEntries[attrIdx].attrLength);
         currIdx += qlm.attrEntries[attrIdx].attrLength;
     }
 
-
     return (0);
 }
 
 /**
- * Print the node, and instruct it to print its previous nodes
- * 打印节点信息（递归调用）
+ * 打印节点信息（递归调用）打印查询树时调用
  */
 RC QL_NodeProj::PrintNode(int numTabs){
     for(int i=0; i < numTabs; i++){
@@ -158,16 +141,10 @@ RC QL_NodeProj::PrintNode(int numTabs){
     return (0);
 }
 
-/*
- * Don't allow record returning for projection nodes
- */
-RC QL_NodeProj::GetNextRec(RM_Record &rec){
-    return (QL_BADCALL);
-}
+
 
 /**
- * Free all memory associated with this node, and delete the previous node
- * 释放节点内存空间（递归调用）
+ * 释放节点内存空间（递归调用）删除查询树时调用
  */
 RC QL_NodeProj::DeleteNodes(){
     prevNode.DeleteNodes();
@@ -175,14 +152,23 @@ RC QL_NodeProj::DeleteNodes(){
     if(listsInitialized == true){
         free(attrsInRec);
         free(buffer);
-        //free(attrsToKeep);
     }
     listsInitialized = false;
     return (0);
 }
 
+/**
+ * 标志位方法
+ */
 bool QL_NodeProj::IsRelNode(){
     return false;
+}
+
+/**
+ * 投影节点不能调用以下函数
+ */
+RC QL_NodeProj::GetNextRec(RM_Record &rec){
+    return (QL_BADCALL);
 }
 
 RC QL_NodeProj::OpenIt(void *data){

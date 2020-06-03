@@ -1,13 +1,6 @@
-// 
-// File:          ql_noderel.cc
-// Description:   Abstract class for query processing nodes
-// Author:        Yifei Huang (yifei@stanford.edu)
-//
-
-#include <cstdio>
 #include <iostream>
-#include <unistd.h>
 #include "../redbase.h"
+#include "../SM/sm.h"
 #include "ql.h"
 #include <string>
 #include "ql_node.h"
@@ -17,8 +10,6 @@
 using namespace std;
 
 /**
- * Create the relation node given the relation entry of the relation
- * it refers to
  * 构造函数
  */
 QL_NodeRel::QL_NodeRel(QL_Manager &qlm, RelCatEntry *rEntry) : QL_Node(qlm){
@@ -54,8 +45,7 @@ QL_NodeRel::~QL_NodeRel(){
 }
 
 /**
- * Open the iterator and by opening the index or filescan
- * 打开迭代器
+ * 通过打开文件扫描器或索引扫描器获取迭代器
  */
 RC QL_NodeRel::OpenIt(){
     RC rc = 0;
@@ -78,6 +68,9 @@ RC QL_NodeRel::OpenIt(){
     return (0);
 }
 
+/**
+ * 打开关系表文件、索引，打开扫描以获取迭代器
+ */
 RC QL_NodeRel::OpenIt(void *data){
     RC rc = 0;
     isOpen = true;
@@ -91,13 +84,14 @@ RC QL_NodeRel::OpenIt(void *data){
     return (0);
 }
 
-/*
- * Retrieve the next record data and copy it to the pointer passed in
+/**
+ * 令指针指向将下一条记录的数据
  */
 RC QL_NodeRel::GetNext(char *data){
     RC rc = 0;
     char *recData;
     RM_Record rec;
+    // 获取下一条记录的数据
     if((rc = RetrieveNextRec(rec, recData))){
         if(rc == RM_EOF || rc == IX_EOF){
             return (QL_EOI);
@@ -108,8 +102,8 @@ RC QL_NodeRel::GetNext(char *data){
     return (0);
 }
 
-/*
- * Close the iterator by closing the filescan or indexscan
+/**
+ * 通过关闭文件扫描器或索引扫描器关闭迭代器
  */
 RC QL_NodeRel::CloseIt(){
     RC rc = 0;
@@ -129,11 +123,12 @@ RC QL_NodeRel::CloseIt(){
     return (rc);
 }
 
-/*
- * Retrieves the next record by either using the index or the filescan
+/**
+ * 获取下一条记录和数据（有索引使用索引，无索引则直接扫描）
  */
 RC QL_NodeRel::RetrieveNextRec(RM_Record &rec, char *&recData){
     RC rc = 0;
+    // 有索引的情况
     if(useIndex){
         RID rid;
         if((rc = is.GetNextEntry(rid) ))
@@ -141,17 +136,19 @@ RC QL_NodeRel::RetrieveNextRec(RM_Record &rec, char *&recData){
         if((rc = fh.GetRec(rid, rec) ))
             return (rc);
     }
+        // 无索引的情况
     else{
         if((rc = fs.GetNextRec(rec)))
             return (rc);
     }
+    // 获取记录的数据
     if((rc = rec.GetData(recData)))
         return (rc);
     return (0);
 }
 
-/*
- * Retrieves the next record from this relation
+/**
+ * 从关系表中获取下一条记录
  */
 RC QL_NodeRel::GetNextRec(RM_Record &rec){
     RC rc = 0;
@@ -165,10 +162,8 @@ RC QL_NodeRel::GetNextRec(RM_Record &rec){
 }
 
 
-/*
- * Tells the relation node to use an index to go through the relation.
- * It requires the attribute number, the index number, and
- * the data for the the equality condition in using the index
+/**
+ * 令该节点使用索引遍历关系表
  */
 RC QL_NodeRel::UseIndex(int attrNum, int indexNumber, void *data){
     indexNo = indexNumber;
@@ -178,9 +173,8 @@ RC QL_NodeRel::UseIndex(int attrNum, int indexNumber, void *data){
     return (0);
 }
 
-/*
- * This node requires the list of attributes, and the number
- * of attributes in the relation to be set up
+/**
+ * 初始化节点的属性列表和属性个数变量
  */
 RC QL_NodeRel::SetUpNode(int *attrs, int attrlistSize){
     RC rc = 0;
@@ -195,15 +189,15 @@ RC QL_NodeRel::SetUpNode(int *attrs, int attrlistSize){
     return (rc);
 }
 
-/*
- * Print the node, and instruct it to print its previous nodes
+/**
+ * 输出节点信息
  */
 RC QL_NodeRel::PrintNode(int numTabs){
     for(int i=0; i < numTabs; i++){
         cout << "\t";
     }
     cout << "--REL: " << relName;
-    if(useIndex && ! useIndexJoin){
+    if(useIndex && !useIndexJoin){
         cout << " using index on attribute " << qlm.attrEntries[indexAttr].attrName;
         if(value == NULL){
             cout << endl;
@@ -232,8 +226,8 @@ RC QL_NodeRel::PrintNode(int numTabs){
     return (0);
 }
 
-/*
- * Delete all memory associated with this node
+/**
+ * 释放该节点有关的所有内存空间
  */
 RC QL_NodeRel::DeleteNodes(){
     if(relNameInitialized == true){
@@ -247,6 +241,9 @@ RC QL_NodeRel::DeleteNodes(){
     return (0);
 }
 
+/**
+ * 返回是否是关系节点的标志位
+ */
 bool QL_NodeRel::IsRelNode(){
     return true;
 }

@@ -101,8 +101,8 @@ set(
         redbase.h
         statistics.cc
         statistics.h
-        sm1.cpp
-#        redbase.cc
+#        sm1.cpp
+        redbase.cc
 #        dbcreate.cc
 )
 

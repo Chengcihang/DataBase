@@ -66,7 +66,7 @@
 
 /*
  * parser.y: yacc specification for RQL
- *
+ * 语法分析程序编译器
  * Authors: Dallan Quass
  *          Jan Jannink
  *          Jason McHugh
@@ -150,10 +150,7 @@ QL_Manager *pQlm;          // QL component manager
 # define YYERROR_VERBOSE 0
 #endif
 
-/* In a future release of Bison, this section will be replaced
-   by #include "y.tab.h".  */
-#ifndef YY_YY_Y_TAB_H_INCLUDED
-# define YY_YY_Y_TAB_H_INCLUDED
+
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -260,7 +257,7 @@ union YYSTYPE
     char *sval;
     NODE *n;
 
-#line 264 "y.tab.cc" /* yacc.c:355  */
+#line 261 "y.tab.cc" /* yacc.c:355  */
 };
 
 typedef union YYSTYPE YYSTYPE;
@@ -273,11 +270,11 @@ extern YYSTYPE yylval;
 
 int yyparse (void);
 
-#endif /* !YY_YY_Y_TAB_H_INCLUDED  */
+
 
 /* Copy the second part of user declarations.  */
 
-#line 281 "y.tab.cc" /* yacc.c:358  */
+#line 278 "y.tab.cc" /* yacc.c:358  */
 
 #ifdef short
 # undef short
@@ -1454,7 +1451,7 @@ yyreduce:
       parse_tree = (yyvsp[-1].n);
       YYACCEPT;
    }
-#line 1458 "y.tab.cc" /* yacc.c:1646  */
+#line 1455 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 3:
@@ -1468,7 +1465,7 @@ yyreduce:
       parse_tree = NULL;
       YYACCEPT;
    }
-#line 1472 "y.tab.cc" /* yacc.c:1646  */
+#line 1469 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 4:
@@ -1478,7 +1475,7 @@ yyreduce:
       parse_tree = NULL;
       YYACCEPT;
    }
-#line 1482 "y.tab.cc" /* yacc.c:1646  */
+#line 1479 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 5:
@@ -1488,7 +1485,7 @@ yyreduce:
       bExit = 1;
       YYACCEPT;
    }
-#line 1492 "y.tab.cc" /* yacc.c:1646  */
+#line 1489 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 9:
@@ -1496,7 +1493,7 @@ yyreduce:
     {
       (yyval.n) = NULL;
    }
-#line 1500 "y.tab.cc" /* yacc.c:1646  */
+#line 1497 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 26:
@@ -1506,7 +1503,7 @@ yyreduce:
       cout << "Query plan display turned on.\n";
       (yyval.n) = NULL;
    }
-#line 1510 "y.tab.cc" /* yacc.c:1646  */
+#line 1507 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 27:
@@ -1516,7 +1513,7 @@ yyreduce:
       cout << "Query plan display turned off.\n";
       (yyval.n) = NULL;
    }
-#line 1520 "y.tab.cc" /* yacc.c:1646  */
+#line 1517 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 28:
@@ -1528,7 +1525,7 @@ yyreduce:
          cout << "Everything kicked out of Buffer!\n";
       (yyval.n) = NULL;
    }
-#line 1532 "y.tab.cc" /* yacc.c:1646  */
+#line 1529 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 29:
@@ -1537,7 +1534,7 @@ yyreduce:
       pPfm->PrintBuffer();
       (yyval.n) = NULL;
    }
-#line 1541 "y.tab.cc" /* yacc.c:1646  */
+#line 1538 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 30:
@@ -1546,7 +1543,7 @@ yyreduce:
       pPfm->ResizeBuffer((yyvsp[0].ival));
       (yyval.n) = NULL;
    }
-#line 1550 "y.tab.cc" /* yacc.c:1646  */
+#line 1547 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 31:
@@ -1561,7 +1558,7 @@ yyreduce:
       #endif
       (yyval.n) = NULL;
    }
-#line 1565 "y.tab.cc" /* yacc.c:1646  */
+#line 1562 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 32:
@@ -1575,7 +1572,7 @@ yyreduce:
       #endif
       (yyval.n) = NULL;
    }
-#line 1579 "y.tab.cc" /* yacc.c:1646  */
+#line 1576 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 33:
@@ -1583,7 +1580,7 @@ yyreduce:
     {
       (yyval.n) = create_table_node((yyvsp[-3].sval), (yyvsp[-1].n));
    }
-#line 1587 "y.tab.cc" /* yacc.c:1646  */
+#line 1584 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 34:
@@ -1591,7 +1588,7 @@ yyreduce:
     {
       (yyval.n) = create_index_node((yyvsp[-3].sval), (yyvsp[-1].sval));
    }
-#line 1595 "y.tab.cc" /* yacc.c:1646  */
+#line 1592 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 35:
@@ -1599,7 +1596,7 @@ yyreduce:
     {
       (yyval.n) = drop_table_node((yyvsp[0].sval));
    }
-#line 1603 "y.tab.cc" /* yacc.c:1646  */
+#line 1600 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 36:
@@ -1607,7 +1604,7 @@ yyreduce:
     {
       (yyval.n) = drop_index_node((yyvsp[-3].sval), (yyvsp[-1].sval));
    }
-#line 1611 "y.tab.cc" /* yacc.c:1646  */
+#line 1608 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 37:
@@ -1615,7 +1612,7 @@ yyreduce:
     {
       (yyval.n) = load_node((yyvsp[-3].sval), (yyvsp[-1].sval));
    }
-#line 1619 "y.tab.cc" /* yacc.c:1646  */
+#line 1616 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 38:
@@ -1623,7 +1620,7 @@ yyreduce:
     {
       (yyval.n) = set_node((yyvsp[-2].sval), (yyvsp[0].sval));
    }
-#line 1627 "y.tab.cc" /* yacc.c:1646  */
+#line 1624 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 39:
@@ -1631,7 +1628,7 @@ yyreduce:
     {
       (yyval.n) = help_node((yyvsp[0].sval));
    }
-#line 1635 "y.tab.cc" /* yacc.c:1646  */
+#line 1632 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 40:
@@ -1639,7 +1636,7 @@ yyreduce:
     {
       (yyval.n) = print_node((yyvsp[0].sval));
    }
-#line 1643 "y.tab.cc" /* yacc.c:1646  */
+#line 1640 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 41:
@@ -1648,7 +1645,7 @@ yyreduce:
       (yyval.n) = NULL;
       bExit = 1;
    }
-#line 1652 "y.tab.cc" /* yacc.c:1646  */
+#line 1649 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 42:
@@ -1656,7 +1653,7 @@ yyreduce:
     {
       (yyval.n) = query_node((yyvsp[-3].n), (yyvsp[-1].n), (yyvsp[0].n));
    }
-#line 1660 "y.tab.cc" /* yacc.c:1646  */
+#line 1657 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 43:
@@ -1664,7 +1661,7 @@ yyreduce:
     {
       (yyval.n) = insert_node((yyvsp[-4].sval), (yyvsp[-1].n));
    }
-#line 1668 "y.tab.cc" /* yacc.c:1646  */
+#line 1665 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 44:
@@ -1672,7 +1669,7 @@ yyreduce:
     {
       (yyval.n) = delete_node((yyvsp[-1].sval), (yyvsp[0].n));
    }
-#line 1676 "y.tab.cc" /* yacc.c:1646  */
+#line 1673 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 45:
@@ -1680,7 +1677,7 @@ yyreduce:
     {
       (yyval.n) = update_node((yyvsp[-5].sval), (yyvsp[-3].n), (yyvsp[-1].n), (yyvsp[0].n));
    }
-#line 1684 "y.tab.cc" /* yacc.c:1646  */
+#line 1681 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 46:
@@ -1688,7 +1685,7 @@ yyreduce:
     {
       (yyval.n) = prepend((yyvsp[-2].n), (yyvsp[0].n));
    }
-#line 1692 "y.tab.cc" /* yacc.c:1646  */
+#line 1689 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 47:
@@ -1696,7 +1693,7 @@ yyreduce:
     {
       (yyval.n) = list_node((yyvsp[0].n));
    }
-#line 1700 "y.tab.cc" /* yacc.c:1646  */
+#line 1697 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 48:
@@ -1704,7 +1701,7 @@ yyreduce:
     {
       (yyval.n) = attrtype_node((yyvsp[-1].sval), (yyvsp[0].sval));
    }
-#line 1708 "y.tab.cc" /* yacc.c:1646  */
+#line 1705 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 50:
@@ -1712,7 +1709,7 @@ yyreduce:
     {
        (yyval.n) = list_node(relattr_node(NULL, (char*)"*"));
    }
-#line 1716 "y.tab.cc" /* yacc.c:1646  */
+#line 1713 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 51:
@@ -1720,7 +1717,7 @@ yyreduce:
     {
       (yyval.n) = prepend((yyvsp[-2].n), (yyvsp[0].n));
    }
-#line 1724 "y.tab.cc" /* yacc.c:1646  */
+#line 1721 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 52:
@@ -1728,7 +1725,7 @@ yyreduce:
     {
       (yyval.n) = list_node((yyvsp[0].n));
    }
-#line 1732 "y.tab.cc" /* yacc.c:1646  */
+#line 1729 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 53:
@@ -1736,7 +1733,7 @@ yyreduce:
     {
       (yyval.n) = relattr_node((yyvsp[-2].sval), (yyvsp[0].sval));
    }
-#line 1740 "y.tab.cc" /* yacc.c:1646  */
+#line 1737 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 54:
@@ -1744,7 +1741,7 @@ yyreduce:
     {
       (yyval.n) = relattr_node(NULL, (yyvsp[0].sval));
    }
-#line 1748 "y.tab.cc" /* yacc.c:1646  */
+#line 1745 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 55:
@@ -1752,7 +1749,7 @@ yyreduce:
     {
       (yyval.n) = prepend((yyvsp[-2].n), (yyvsp[0].n));
    }
-#line 1756 "y.tab.cc" /* yacc.c:1646  */
+#line 1753 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 56:
@@ -1760,7 +1757,7 @@ yyreduce:
     {
       (yyval.n) = list_node((yyvsp[0].n));
    }
-#line 1764 "y.tab.cc" /* yacc.c:1646  */
+#line 1761 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 57:
@@ -1768,7 +1765,7 @@ yyreduce:
     {
       (yyval.n) = relation_node((yyvsp[0].sval));
    }
-#line 1772 "y.tab.cc" /* yacc.c:1646  */
+#line 1769 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 58:
@@ -1776,7 +1773,7 @@ yyreduce:
     {
       (yyval.n) = (yyvsp[0].n);
    }
-#line 1780 "y.tab.cc" /* yacc.c:1646  */
+#line 1777 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 59:
@@ -1784,7 +1781,7 @@ yyreduce:
     {
       (yyval.n) = NULL;
    }
-#line 1788 "y.tab.cc" /* yacc.c:1646  */
+#line 1785 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 60:
@@ -1792,7 +1789,7 @@ yyreduce:
     {
       (yyval.n) = prepend((yyvsp[-2].n), (yyvsp[0].n));
    }
-#line 1796 "y.tab.cc" /* yacc.c:1646  */
+#line 1793 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 61:
@@ -1800,7 +1797,7 @@ yyreduce:
     {
       (yyval.n) = list_node((yyvsp[0].n));
    }
-#line 1804 "y.tab.cc" /* yacc.c:1646  */
+#line 1801 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 62:
@@ -1808,7 +1805,7 @@ yyreduce:
     {
       (yyval.n) = condition_node((yyvsp[-2].n), (yyvsp[-1].cval), (yyvsp[0].n));
    }
-#line 1812 "y.tab.cc" /* yacc.c:1646  */
+#line 1809 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 63:
@@ -1816,7 +1813,7 @@ yyreduce:
     {
       (yyval.n) = relattr_or_value_node((yyvsp[0].n), NULL);
    }
-#line 1820 "y.tab.cc" /* yacc.c:1646  */
+#line 1817 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 64:
@@ -1824,7 +1821,7 @@ yyreduce:
     {
       (yyval.n) = relattr_or_value_node(NULL, (yyvsp[0].n));
    }
-#line 1828 "y.tab.cc" /* yacc.c:1646  */
+#line 1825 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 65:
@@ -1832,7 +1829,7 @@ yyreduce:
     {
       (yyval.n) = prepend((yyvsp[-2].n), (yyvsp[0].n));
    }
-#line 1836 "y.tab.cc" /* yacc.c:1646  */
+#line 1833 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 66:
@@ -1840,7 +1837,7 @@ yyreduce:
     {
       (yyval.n) = list_node((yyvsp[0].n));
    }
-#line 1844 "y.tab.cc" /* yacc.c:1646  */
+#line 1841 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 67:
@@ -1848,7 +1845,7 @@ yyreduce:
     {
       (yyval.n) = value_node(STRING, (void *) (yyvsp[0].sval));
    }
-#line 1852 "y.tab.cc" /* yacc.c:1646  */
+#line 1849 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 68:
@@ -1856,7 +1853,7 @@ yyreduce:
     {
       (yyval.n) = value_node(INT, (void *)& (yyvsp[0].ival));
    }
-#line 1860 "y.tab.cc" /* yacc.c:1646  */
+#line 1857 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 69:
@@ -1864,7 +1861,7 @@ yyreduce:
     {
       (yyval.n) = value_node(FLOAT, (void *)& (yyvsp[0].rval));
    }
-#line 1868 "y.tab.cc" /* yacc.c:1646  */
+#line 1865 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 70:
@@ -1872,7 +1869,7 @@ yyreduce:
     {
       (yyval.sval) = (yyvsp[0].sval);
    }
-#line 1876 "y.tab.cc" /* yacc.c:1646  */
+#line 1873 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 71:
@@ -1880,7 +1877,7 @@ yyreduce:
     {
       (yyval.sval) = NULL;
    }
-#line 1884 "y.tab.cc" /* yacc.c:1646  */
+#line 1881 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 72:
@@ -1888,7 +1885,7 @@ yyreduce:
     {
       (yyval.cval) = LT_OP;
    }
-#line 1892 "y.tab.cc" /* yacc.c:1646  */
+#line 1889 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 73:
@@ -1896,7 +1893,7 @@ yyreduce:
     {
       (yyval.cval) = LE_OP;
    }
-#line 1900 "y.tab.cc" /* yacc.c:1646  */
+#line 1897 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 74:
@@ -1904,7 +1901,7 @@ yyreduce:
     {
       (yyval.cval) = GT_OP;
    }
-#line 1908 "y.tab.cc" /* yacc.c:1646  */
+#line 1905 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 75:
@@ -1912,7 +1909,7 @@ yyreduce:
     {
       (yyval.cval) = GE_OP;
    }
-#line 1916 "y.tab.cc" /* yacc.c:1646  */
+#line 1913 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 76:
@@ -1920,7 +1917,7 @@ yyreduce:
     {
       (yyval.cval) = EQ_OP;
    }
-#line 1924 "y.tab.cc" /* yacc.c:1646  */
+#line 1921 "y.tab.cc" /* yacc.c:1646  */
     break;
 
   case 77:
@@ -1928,11 +1925,11 @@ yyreduce:
     {
       (yyval.cval) = NE_OP;
    }
-#line 1932 "y.tab.cc" /* yacc.c:1646  */
+#line 1929 "y.tab.cc" /* yacc.c:1646  */
     break;
 
 
-#line 1936 "y.tab.cc" /* yacc.c:1646  */
+#line 1933 "y.tab.cc" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires

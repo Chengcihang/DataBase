@@ -31,13 +31,23 @@ int main(int argc, char *argv[])
 {
     char const *dbname = "testDB";
     RC rc;
-    // Look for 2 arguments.  The first is always the name of the program
-    // that was executed, and the second should be the name of the
-    // database.
-//    if (argc != 2) {
-//        cerr << "Usage: " << argv[0] << " dbname \n";
-//        exit(1);
-//    }
+
+    // 创建数据库
+    dbname = "testDB";
+    smm.DropDb(dbname);
+    smm.CreateDb(dbname);
+    smm.OpenDb(dbname);
+
+    struct AttrInfo attr = {INT, 4, "num"};
+    rc = smm.CreateTable("table1",1, &attr);
+
+    rc = smm.DropTable("table1");
+
+    // Closes the database folder
+    if ((rc = smm.CloseDb())) {
+        PrintError(rc);
+        return (1);
+    }
 
     // 打开数据库
     if ((rc = smm.OpenDb(dbname))) {

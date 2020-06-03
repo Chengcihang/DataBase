@@ -1,15 +1,9 @@
 #include <unistd.h>
 #include <sys/types.h>
-//#include "../PF/pf.h"
+#include "../PF/pf.h"
 #include <stdlib.h>
 #include <cstdio>
-/*
- * The following functions are comparison functions that return 0 if 
- * the two objects are equal, <0 if the first value is smaller, and
- * >0 if the second value is smaller.
- * They must take in an attribute type and attribute length, which 
- * determines the basis to compare the values on.
- */
+
 bool nequal(void * value1, void * value2, AttrType attrtype, int attrLength){
     switch(attrtype){
         case FLOAT: return (*(float *)value1 == *(float*)value2);
